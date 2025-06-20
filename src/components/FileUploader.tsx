@@ -24,7 +24,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     }
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive, rejectedFiles } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
@@ -81,7 +81,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         </div>
       </div>
 
-      {rejectedFiles.length > 0 && (
+      {fileRejections.length > 0 && (
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-center space-x-2 text-red-600">
             <AlertCircle className="h-4 w-4" />
