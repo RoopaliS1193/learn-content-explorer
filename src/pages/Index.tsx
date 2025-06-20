@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { FileUploader } from '@/components/FileUploader';
-import { TaxonomyUploader } from '@/components/TaxonomyUploader';
 import { AnalysisResults } from '@/components/AnalysisResults';
 import { Header } from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
@@ -20,19 +19,9 @@ export interface AnalysisResult {
 const Index = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [taxonomyData, setTaxonomyData] = useState<any>(null);
   const { toast } = useToast();
 
   const handleFileAnalysis = async (file: File) => {
-    if (!taxonomyData) {
-      toast({
-        title: "Taxonomy Required",
-        description: "Please upload a skill taxonomy file first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
@@ -44,7 +33,7 @@ const Index = () => {
       const mockResult: AnalysisResult = {
         keywords: [
           "machine learning algorithms",
-          "data preprocessing",
+          "data preprocessing", 
           "statistical analysis",
           "predictive modeling",
           "feature engineering",
@@ -56,7 +45,7 @@ const Index = () => {
         ],
         domains: [
           "Data Science",
-          "Machine Learning",
+          "Machine Learning", 
           "Statistics",
           "Artificial Intelligence",
           "Business Analytics"
@@ -64,7 +53,7 @@ const Index = () => {
         skills: [
           "Python Programming",
           "Statistical Modeling",
-          "Data Analysis",
+          "Data Analysis", 
           "Machine Learning Implementation",
           "Data Visualization",
           "Problem Solving",
@@ -86,7 +75,7 @@ const Index = () => {
       });
     } catch (error) {
       toast({
-        title: "Analysis Failed",
+        title: "Analysis Failed", 
         description: "There was an error analyzing the file. Please try again.",
         variant: "destructive",
       });
@@ -95,20 +84,12 @@ const Index = () => {
     }
   };
 
-  const handleTaxonomyUpload = (data: any) => {
-    setTaxonomyData(data);
-    toast({
-      title: "Taxonomy Loaded",
-      description: "Skill taxonomy has been successfully uploaded.",
-    });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <Header />
       
       <main className="container mx-auto px-6 py-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Hero Section */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-4">
@@ -121,20 +102,11 @@ const Index = () => {
           </div>
 
           {/* Upload Section */}
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
-            <div className="space-y-6">
-              <h2 className="text-2xl font-semibold text-slate-800">1. Upload Skill Taxonomy</h2>
-              <TaxonomyUploader onUpload={handleTaxonomyUpload} />
-            </div>
-            
-            <div className="space-y-6">
-              <h2 className="text-2xl font-semibold text-slate-800">2. Upload Course File</h2>
-              <FileUploader 
-                onFileSelect={handleFileAnalysis}
-                isProcessing={isAnalyzing}
-                disabled={!taxonomyData}
-              />
-            </div>
+          <div className="mb-12">
+            <FileUploader 
+              onFileSelect={handleFileAnalysis}
+              isProcessing={isAnalyzing}
+            />
           </div>
 
           {/* Results Section */}

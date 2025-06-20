@@ -2,8 +2,10 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Hash, Globe, Target, FileText, Loader2 } from 'lucide-react';
+import { Hash, Globe, Target, FileText, Loader2, Copy, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import type { AnalysisResult } from '@/pages/Index';
 
 interface AnalysisResultsProps {
@@ -12,6 +14,27 @@ interface AnalysisResultsProps {
 }
 
 export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, isLoading }) => {
+  const { toast } = useToast();
+  const [copiedSection, setCopiedSection] = React.useState<string | null>(null);
+
+  const copyToClipboard = async (items: string[], sectionName: string) => {
+    try {
+      await navigator.clipboard.writeText(items.join(', '));
+      setCopiedSection(sectionName);
+      toast({
+        title: "Copied to clipboard",
+        description: `${sectionName} copied as comma-separated list`,
+      });
+      setTimeout(() => setCopiedSection(null), 2000);
+    } catch (err) {
+      toast({
+        title: "Copy failed",
+        description: "Could not copy to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="p-8">
@@ -58,14 +81,28 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, isLoad
       <div className="grid md:grid-cols-3 gap-6">
         {/* Keywords Section */}
         <Card className="p-6">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Hash className="h-5 w-5 text-purple-600" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Hash className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-800">Keywords</h3>
+                <p className="text-sm text-slate-500">For improved discoverability</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-800">Keywords</h3>
-              <p className="text-sm text-slate-500">For improved discoverability</p>
-            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => copyToClipboard(result.keywords, 'Keywords')}
+              className="text-xs"
+            >
+              {copiedSection === 'Keywords' ? (
+                <Check className="h-3 w-3" />
+              ) : (
+                <Copy className="h-3 w-3" />
+              )}
+            </Button>
           </div>
           
           <div className="space-y-2">
@@ -81,16 +118,30 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, isLoad
           </div>
         </Card>
 
-        {/* Domains Section */}
+        {/* Topics/Domains Section */}
         <Card className="p-6">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <Globe className="h-5 w-5 text-emerald-600" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-emerald-100 rounded-lg">
+                <Globe className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-800">Topics</h3>
+                <p className="text-sm text-slate-500">Subject areas covered</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-800">Domains</h3>
-              <p className="text-sm text-slate-500">Subject areas covered</p>
-            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => copyToClipboard(result.domains, 'Topics')}
+              className="text-xs"
+            >
+              {copiedSection === 'Topics' ? (
+                <Check className="h-3 w-3" />
+              ) : (
+                <Copy className="h-3 w-3" />
+              )}
+            </Button>
           </div>
           
           <div className="space-y-3">
@@ -107,14 +158,28 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, isLoad
 
         {/* Skills Section */}
         <Card className="p-6">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Target className="h-5 w-5 text-blue-600" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Target className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-800">Skills</h3>
+                <p className="text-sm text-slate-500">Learning outcomes</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-800">Skills</h3>
-              <p className="text-sm text-slate-500">Learning outcomes</p>
-            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => copyToClipboard(result.skills, 'Skills')}
+              className="text-xs"
+            >
+              {copiedSection === 'Skills' ? (
+                <Check className="h-3 w-3" />
+              ) : (
+                <Copy className="h-3 w-3" />
+              )}
+            </Button>
           </div>
           
           <div className="space-y-2">

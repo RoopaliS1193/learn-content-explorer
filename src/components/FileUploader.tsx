@@ -8,13 +8,11 @@ import { Card } from '@/components/ui/card';
 interface FileUploaderProps {
   onFileSelect: (file: File) => void;
   isProcessing: boolean;
-  disabled?: boolean;
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({ 
   onFileSelect, 
-  isProcessing, 
-  disabled 
+  isProcessing
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -34,7 +32,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       'application/vnd.ms-powerpoint': ['.ppt']
     },
     maxFiles: 1,
-    disabled: disabled || isProcessing
+    disabled: isProcessing
   });
 
   const handleAnalyze = () => {
@@ -58,7 +56,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         className={`
           border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200
           ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-slate-300 hover:border-slate-400'}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+          ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}
         `}
       >
         <input {...getInputProps()} />
@@ -102,7 +100,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
           
           <Button 
             onClick={handleAnalyze}
-            disabled={isProcessing || disabled}
+            disabled={isProcessing}
             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
           >
             {isProcessing ? (
@@ -114,15 +112,6 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
               'Analyze Course Content'
             )}
           </Button>
-        </div>
-      )}
-
-      {disabled && (
-        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <div className="flex items-center space-x-2 text-amber-600">
-            <AlertCircle className="h-4 w-4" />
-            <span className="text-sm">Please upload a skill taxonomy file first.</span>
-          </div>
         </div>
       )}
     </Card>
