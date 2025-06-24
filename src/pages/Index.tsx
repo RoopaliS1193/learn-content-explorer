@@ -17,10 +17,17 @@ export interface AnalysisResult {
   };
 }
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+// Check if Supabase environment variables are available
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+let supabase: ReturnType<typeof createClient> | null = null;
+
+if (supabaseUrl && supabaseAnonKey) {
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+  console.error('Supabase environment variables are not set:', { supabaseUrl, supabaseAnonKey });
+}
 
 const Index = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -28,6 +35,15 @@ const Index = () => {
   const { toast } = useToast();
 
   const handleFileAnalysis = async (file: File) => {
+    if (!supabase) {
+      toast({
+        title: "Configuration Error",
+        description: "Supabase is not properly configured. Please check your environment variables.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
@@ -79,6 +95,16 @@ const Index = () => {
               domain classifications, and skill mappings powered by your custom taxonomy.
             </p>
           </div>
+
+          {/* Configuration Warning */}
+          {!supabase && (
+            <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center space-x-2 text-yellow-700">
+                <span className="font-medium">⚠️ Configuration Required:</span>
+                <span>Please ensure your Supabase connection is properly configured.</span>
+              </div>
+            </div>
+          )}
 
           {/* Upload Section */}
           <div className="mb-12">
