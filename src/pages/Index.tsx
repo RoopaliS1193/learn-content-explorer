@@ -17,17 +17,11 @@ export interface AnalysisResult {
   };
 }
 
-// Check if Supabase environment variables are available
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-let supabase: ReturnType<typeof createClient> | null = null;
-
-if (supabaseUrl && supabaseAnonKey) {
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
-} else {
-  console.error('Supabase environment variables are not set:', { supabaseUrl, supabaseAnonKey });
-}
+// Use the actual Supabase project credentials
+const supabase = createClient(
+  'https://kgaiqhszcjiquxcwxxbs.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYWlxaHN6Y2ppcXV4Y3d4eGJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NjYyODksImV4cCI6MjA2NjM0MjI4OX0.OikYe9LLX-0eKhG4sPH7e1IOpNtWiZkRYPJdF2yJpb4'
+);
 
 const Index = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -35,15 +29,6 @@ const Index = () => {
   const { toast } = useToast();
 
   const handleFileAnalysis = async (file: File) => {
-    if (!supabase) {
-      toast({
-        title: "Configuration Error",
-        description: "Supabase is not properly configured. Please check your environment variables.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
@@ -52,20 +37,24 @@ const Index = () => {
       const formData = new FormData();
       formData.append('file', file);
 
+      console.log('Calling analyze-course function with file:', file.name);
+
       // Call Supabase edge function
       const { data, error } = await supabase.functions.invoke('analyze-course', {
         body: formData,
       });
 
       if (error) {
+        console.error('Edge function error:', error);
         throw error;
       }
 
+      console.log('Analysis result:', data);
       setAnalysisResult(data);
       
       toast({
         title: "Analysis Complete",
-        description: "Course content has been successfully analyzed using your skill taxonomy.",
+        description: `Found ${data.skills?.length || 0} skills from your taxonomy that match the course content.`,
       });
     } catch (error) {
       console.error('Analysis error:', error);
@@ -95,16 +84,6 @@ const Index = () => {
               domain classifications, and skill mappings powered by your custom taxonomy.
             </p>
           </div>
-
-          {/* Configuration Warning */}
-          {!supabase && (
-            <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-center space-x-2 text-yellow-700">
-                <span className="font-medium">⚠️ Configuration Required:</span>
-                <span>Please ensure your Supabase connection is properly configured.</span>
-              </div>
-            </div>
-          )}
 
           {/* Upload Section */}
           <div className="mb-12">

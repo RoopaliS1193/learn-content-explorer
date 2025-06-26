@@ -25,64 +25,119 @@ serve(async (req) => {
       throw new Error('No file provided')
     }
 
-    // Extract text content from file (simplified for demo)
+    console.log('Processing file:', file.name, 'Size:', file.size)
+
+    // Extract text content from file
     const text = await file.text()
+    console.log('Extracted text length:', text.length)
     
-    // Query skill taxonomy from database
+    // Query skill taxonomy from your Skill library table
     const { data: skills, error: skillsError } = await supabaseClient
-      .from('skill_taxonomy')
+      .from('Skill library')
       .select('*')
     
     if (skillsError) {
-      console.error('Error fetching skills:', skillsError)
+      console.error('Error fetching skills from Skill library:', skillsError)
       throw skillsError
     }
 
-    // Simple keyword matching logic (you can enhance this)
+    console.log('Found skills in taxonomy:', skills?.length || 0)
+
+    // Process text for better matching
+    const lowerText = text.toLowerCase()
+    const words = lowerText.match(/\b\w+\b/g) || []
+    
+    const matchedSkills: string[] = []
     const extractedKeywords: string[] = []
     const extractedDomains: string[] = []
-    const extractedSkills: string[] = []
 
-    // Match against taxonomy
+    // Match against your skill taxonomy
     skills?.forEach(skill => {
-      if (text.toLowerCase().includes(skill.name.toLowerCase())) {
-        extractedSkills.push(skill.name)
-        if (skill.domain && !extractedDomains.includes(skill.domain)) {
-          extractedDomains.push(skill.domain)
-        }
-        if (skill.keywords) {
-          const keywords = skill.keywords.split(',').map((k: string) => k.trim())
-          keywords.forEach((keyword: string) => {
-            if (!extractedKeywords.includes(keyword)) {
-              extractedKeywords.push(keyword)
-            }
-          })
+      const skillName = skill.Skill.toLowerCase()
+      
+      // Check for exact skill name match or partial matches
+      if (lowerText.includes(skillName) || words.some(word => 
+        word.length > 3 && skillName.includes(word)
+      )) {
+        console.log('Matched skill:', skill.Skill)
+        matchedSkills.push(skill.Skill)
+        
+        // Add skill name as keyword
+        if (!extractedKeywords.includes(skill.Skill)) {
+          extractedKeywords.push(skill.Skill)
         }
       }
     })
 
-    // Fallback to basic extraction if no matches
-    if (extractedSkills.length === 0) {
-      // Basic keyword extraction from text
-      const words = text.toLowerCase().match(/\b\w+\b/g) || []
-      const commonSkills = ['programming', 'analysis', 'management', 'design', 'development']
-      commonSkills.forEach(skill => {
-        if (words.includes(skill)) {
-          extractedSkills.push(skill.charAt(0).toUpperCase() + skill.slice(1))
+    // If we have matched skills, extract related keywords
+    if (matchedSkills.length > 0) {
+      // Use the skills themselves as primary keywords
+      matchedSkills.forEach(skill => {
+        if (!extractedKeywords.includes(skill)) {
+          extractedKeywords.push(skill)
         }
       })
+      
+      // Add some domain categorization based on matched skills
+      const techSkills = matchedSkills.filter(skill => 
+        skill.toLowerCase().includes('programming') || 
+        skill.toLowerCase().includes('development') ||
+        skill.toLowerCase().includes('software') ||
+        skill.toLowerCase().includes('coding')
+      )
+      
+      const analyticalSkills = matchedSkills.filter(skill =>
+        skill.toLowerCase().includes('analysis') ||
+        skill.toLowerCase().includes('data') ||
+        skill.toLowerCase().includes('research')
+      )
+      
+      const managementSkills = matchedSkills.filter(skill =>
+        skill.toLowerCase().includes('management') ||
+        skill.toLowerCase().includes('leadership') ||
+        skill.toLowerCase().includes('project')
+      )
+
+      if (techSkills.length > 0) extractedDomains.push('Technology')
+      if (analyticalSkills.length > 0) extractedDomains.push('Data & Analytics')
+      if (managementSkills.length > 0) extractedDomains.push('Management')
+    }
+
+    // Fallback if no matches found
+    if (matchedSkills.length === 0) {
+      console.log('No skill matches found, using basic text analysis')
+      
+      // Basic keyword extraction from common educational terms
+      const commonTerms = ['analysis', 'research', 'writing', 'communication', 'problem solving', 'critical thinking']
+      commonTerms.forEach(term => {
+        if (lowerText.includes(term)) {
+          extractedKeywords.push(term.charAt(0).toUpperCase() + term.slice(1))
+        }
+      })
+      
+      // Default domains
+      extractedDomains.push('General Education')
+      
+      // Use some keywords as skills if no specific skills were matched
+      if (extractedKeywords.length > 0) {
+        matchedSkills.push(...extractedKeywords.slice(0, 3))
+      } else {
+        matchedSkills.push('Critical Thinking', 'Communication', 'Problem Solving')
+      }
     }
 
     const result = {
-      keywords: extractedKeywords.length > 0 ? extractedKeywords : ['data analysis', 'programming', 'research'],
-      domains: extractedDomains.length > 0 ? extractedDomains : ['Technology', 'Education'],
-      skills: extractedSkills.length > 0 ? extractedSkills : ['Critical Thinking', 'Problem Solving'],
+      keywords: extractedKeywords.length > 0 ? extractedKeywords : ['learning', 'education', 'knowledge'],
+      domains: extractedDomains.length > 0 ? extractedDomains : ['Education'],
+      skills: matchedSkills.length > 0 ? matchedSkills : ['General Learning Skills'],
       fileInfo: {
         name: file.name,
         size: file.size,
         type: file.type
       }
     }
+
+    console.log('Final result:', result)
 
     return new Response(
       JSON.stringify(result),
@@ -94,6 +149,7 @@ serve(async (req) => {
       },
     )
   } catch (error) {
+    console.error('Error in analyze-course function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
