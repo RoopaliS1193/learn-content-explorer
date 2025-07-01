@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { FileUploader } from '@/components/FileUploader';
 import { AnalysisResults } from '@/components/AnalysisResults';
@@ -10,6 +9,7 @@ export interface AnalysisResult {
   keywords: string[];
   domains: string[];
   skills: string[];
+  skillSources?: Array<{skill: string, source: string}>;
   fileInfo: {
     name: string;
     size: number;
