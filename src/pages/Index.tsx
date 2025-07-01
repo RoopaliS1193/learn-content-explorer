@@ -4,6 +4,7 @@ import { FileUploader } from '@/components/FileUploader';
 import { AnalysisResults } from '@/components/AnalysisResults';
 import { Header } from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AnalysisResult {
   keywords: string[];
@@ -26,57 +27,34 @@ const Index = () => {
     setAnalysisResult(null);
 
     try {
-      // Simulate processing time for demo
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('Starting file analysis for:', file.name);
+      
+      // Create FormData to send the file to the edge function
+      const formData = new FormData();
+      formData.append('file', file);
 
-      // Mock analysis results - in a real app, this would call your backend
-      const mockResult: AnalysisResult = {
-        keywords: [
-          "machine learning algorithms",
-          "data preprocessing", 
-          "statistical analysis",
-          "predictive modeling",
-          "feature engineering",
-          "neural networks",
-          "regression analysis",
-          "classification techniques",
-          "data visualization",
-          "model evaluation"
-        ],
-        domains: [
-          "Data Science",
-          "Machine Learning", 
-          "Statistics",
-          "Artificial Intelligence",
-          "Business Analytics"
-        ],
-        skills: [
-          "Python Programming",
-          "Statistical Modeling",
-          "Data Analysis", 
-          "Machine Learning Implementation",
-          "Data Visualization",
-          "Problem Solving",
-          "Critical Thinking",
-          "Research Methodology"
-        ],
-        fileInfo: {
-          name: file.name,
-          size: file.size,
-          type: file.type
-        }
-      };
+      // Call the Supabase edge function
+      const { data, error } = await supabase.functions.invoke('analyze-course', {
+        body: formData,
+      });
 
-      setAnalysisResult(mockResult);
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Analysis failed');
+      }
+
+      console.log('Analysis result:', data);
+      setAnalysisResult(data);
       
       toast({
         title: "Analysis Complete",
-        description: "Course content has been successfully analyzed.",
+        description: `Found ${data.skills?.length || 0} skills and ${data.keywords?.length || 0} keywords from your course content.`,
       });
     } catch (error) {
+      console.error('Analysis error:', error);
       toast({
         title: "Analysis Failed", 
-        description: "There was an error analyzing the file. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error analyzing the file. Please try again.",
         variant: "destructive",
       });
     } finally {
