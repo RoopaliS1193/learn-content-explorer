@@ -1,27 +1,20 @@
+
 import React, { useState } from 'react';
 import { FileUploader } from '@/components/FileUploader';
 import { AnalysisResults } from '@/components/AnalysisResults';
 import { Header } from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
-import { createClient } from '@supabase/supabase-js';
 
 export interface AnalysisResult {
   keywords: string[];
   domains: string[];
   skills: string[];
-  skillSources?: Array<{skill: string, source: string}>;
   fileInfo: {
     name: string;
     size: number;
     type: string;
   };
 }
-
-// Use the actual Supabase project credentials
-const supabase = createClient(
-  'https://kgaiqhszcjiquxcwxxbs.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnYWlxaHN6Y2ppcXV4Y3d4eGJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NjYyODksImV4cCI6MjA2NjM0MjI4OX0.OikYe9LLX-0eKhG4sPH7e1IOpNtWiZkRYPJdF2yJpb4'
-);
 
 const Index = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -33,31 +26,54 @@ const Index = () => {
     setAnalysisResult(null);
 
     try {
-      // Create form data to send file to edge function
-      const formData = new FormData();
-      formData.append('file', file);
+      // Simulate processing time for demo
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      console.log('Calling analyze-course function with file:', file.name);
+      // Mock analysis results - in a real app, this would call your backend
+      const mockResult: AnalysisResult = {
+        keywords: [
+          "machine learning algorithms",
+          "data preprocessing", 
+          "statistical analysis",
+          "predictive modeling",
+          "feature engineering",
+          "neural networks",
+          "regression analysis",
+          "classification techniques",
+          "data visualization",
+          "model evaluation"
+        ],
+        domains: [
+          "Data Science",
+          "Machine Learning", 
+          "Statistics",
+          "Artificial Intelligence",
+          "Business Analytics"
+        ],
+        skills: [
+          "Python Programming",
+          "Statistical Modeling",
+          "Data Analysis", 
+          "Machine Learning Implementation",
+          "Data Visualization",
+          "Problem Solving",
+          "Critical Thinking",
+          "Research Methodology"
+        ],
+        fileInfo: {
+          name: file.name,
+          size: file.size,
+          type: file.type
+        }
+      };
 
-      // Call Supabase edge function
-      const { data, error } = await supabase.functions.invoke('analyze-course', {
-        body: formData,
-      });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      console.log('Analysis result:', data);
-      setAnalysisResult(data);
+      setAnalysisResult(mockResult);
       
       toast({
         title: "Analysis Complete",
-        description: `Found ${data.skills?.length || 0} skills from your taxonomy that match the course content.`,
+        description: "Course content has been successfully analyzed.",
       });
     } catch (error) {
-      console.error('Analysis error:', error);
       toast({
         title: "Analysis Failed", 
         description: "There was an error analyzing the file. Please try again.",
@@ -81,7 +97,7 @@ const Index = () => {
             </h1>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto">
               Upload your course materials and get intelligent keyword suggestions, 
-              domain classifications, and skill mappings powered by your custom taxonomy.
+              domain classifications, and skill mappings for improved discoverability.
             </p>
           </div>
 

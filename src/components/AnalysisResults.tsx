@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Hash, Globe, Target, FileText, Loader2, Copy, Check, Database, Zap } from 'lucide-react';
+import { Hash, Globe, Target, FileText, Loader2, Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { AnalysisResult } from '@/pages/Index';
 
@@ -165,7 +165,7 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, isLoad
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-slate-800">Skills</h3>
-                <p className="text-sm text-slate-500">Learning outcomes from multiple taxonomies</p>
+                <p className="text-sm text-slate-500">Learning outcomes</p>
               </div>
             </div>
             <Button
@@ -183,30 +183,13 @@ export const AnalysisResults: React.FC<AnalysisResultsProps> = ({ result, isLoad
           </div>
           
           <div className="space-y-2">
-            {result.skillSources?.map((skillSource, index) => (
+            {result.skills.map((skill, index) => (
               <div 
                 key={index}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-blue-50 transition-colors"
+                className="flex items-center space-x-2 p-2 rounded-lg hover:bg-blue-50 transition-colors"
               >
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-slate-700">{skillSource.skill}</span>
-                </div>
-                <Badge 
-                  variant="outline" 
-                  className={`text-xs ${
-                    skillSource.source === 'Custom Taxonomy' 
-                      ? 'border-blue-200 text-blue-700 bg-blue-50' 
-                      : 'border-amber-200 text-amber-700 bg-amber-50'
-                  }`}
-                >
-                  {skillSource.source === 'Custom Taxonomy' ? (
-                    <Database className="h-3 w-3 mr-1" />
-                  ) : (
-                    <Zap className="h-3 w-3 mr-1" />
-                  )}
-                  {skillSource.source === 'Custom Taxonomy' ? 'Custom' : 'Universal'}
-                </Badge>
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm text-slate-700">{skill}</span>
               </div>
             ))}
           </div>
