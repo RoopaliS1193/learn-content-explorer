@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
@@ -20,6 +19,12 @@ interface SkillTaxonomy {
   technical_skills: string[];
   functional_skills: string[];
   soft_skills: string[];
+}
+
+interface SkillData {
+  canonical: string;
+  mappedTerms: string[];
+  type: string;
 }
 
 // Enhanced text extraction with streaming support
@@ -110,12 +115,11 @@ async function extractTextFromFile(file: File): Promise<string> {
   }
 }
 
-// Load comprehensive skills taxonomy from Supabase and expanded sources
-async function loadSkillsTaxonomy(): Promise<SkillTaxonomy> {
-  console.log('Loading comprehensive skills taxonomy...');
+// Load comprehensive skills taxonomy from Supabase with proper mapped terms handling
+async function loadSkillsTaxonomy(): Promise<{ taxonomy: SkillTaxonomy; skillsData: SkillData[] }> {
+  console.log('Loading comprehensive skills taxonomy from Supabase...');
   
   try {
-    // Load skills from Supabase database
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -127,159 +131,109 @@ async function loadSkillsTaxonomy(): Promise<SkillTaxonomy> {
     
     if (error) {
       console.error('Error loading skills from Supabase:', error);
+      throw error;
     }
     
-    const supabaseSkills: string[] = [];
-    const supabaseSkillsWithTypes: { skill: string; type: string }[] = [];
+    const skillsData: SkillData[] = [];
+    const allSkills: string[] = [];
     
     if (dbSkills && dbSkills.length > 0) {
-      console.log(`Successfully loaded ${dbSkills.length} skills from Supabase`);
+      console.log(`Successfully loaded ${dbSkills.length} skill records from Supabase`);
       
       dbSkills.forEach(row => {
-        // Add canonical term
-        if (row['Canonical Term']) {
-          supabaseSkills.push(row['Canonical Term']);
-          supabaseSkillsWithTypes.push({
-            skill: row['Canonical Term'],
-            type: row['Skill Type'] || 'Technical Skill'
-          });
-        }
+        const canonicalTerm = row['Canonical Term'];
+        const mappedTerms = row['Mapped Terms'] || [];
+        const skillType = row['Skill Type'] || 'Technical Skill';
         
-        // Add mapped terms if they exist
-        if (row['Mapped Terms'] && Array.isArray(row['Mapped Terms'])) {
-          row['Mapped Terms'].forEach((term: string) => {
-            if (term && term.trim()) {
-              supabaseSkills.push(term.trim());
-              supabaseSkillsWithTypes.push({
-                skill: term.trim(),
-                type: row['Skill Type'] || 'Technical Skill'
-              });
-            }
+        if (canonicalTerm) {
+          // Store skill data for matching
+          skillsData.push({
+            canonical: canonicalTerm,
+            mappedTerms: Array.isArray(mappedTerms) ? mappedTerms : [],
+            type: skillType
           });
+          
+          // Add canonical term to all skills
+          allSkills.push(canonicalTerm);
+          
+          // Add mapped terms to all skills
+          if (Array.isArray(mappedTerms)) {
+            mappedTerms.forEach((term: string) => {
+              if (term && term.trim()) {
+                allSkills.push(term.trim());
+              }
+            });
+          }
         }
       });
       
-      console.log(`Total skills from Supabase (including mapped terms): ${supabaseSkills.length}`);
+      console.log(`Total skills loaded (including mapped terms): ${allSkills.length}`);
+      console.log(`Skill data records: ${skillsData.length}`);
     } else {
       console.log('No skills found in Supabase, using fallback taxonomy');
     }
     
-    // Enhanced base taxonomy with 2000+ skills from industry standards
+    // Enhanced base taxonomy for fallback
     const baseTaxonomy = {
       technical_skills: [
-        // Programming Languages & Frameworks
         "JavaScript", "Python", "Java", "C++", "C#", "React", "Node.js", "SQL", "MongoDB", "PostgreSQL", "MySQL",
         "HTML", "CSS", "TypeScript", "Angular", "Vue.js", "PHP", "Ruby", "Go", "Rust", "Swift", "Kotlin",
-        "Scala", "Perl", "R", "MATLAB", "SAS", "Julia", "Dart", "Flutter", "React Native", "Xamarin",
-        
-        // Cloud & Infrastructure
         "Kubernetes", "Docker", "AWS", "Azure", "Google Cloud", "Linux", "Git", "Jenkins", "Terraform",
-        "Ansible", "Chef", "Puppet", "Vagrant", "VMware", "Hyper-V", "OpenStack", "CloudFormation",
-        "Serverless", "Lambda", "Azure Functions", "Google Cloud Functions", "Microservices", "DevOps", "CI/CD",
-        
-        // Data & AI
         "Machine Learning", "Data Science", "Artificial Intelligence", "Deep Learning", "TensorFlow", "PyTorch",
-        "Keras", "Scikit-learn", "Pandas", "NumPy", "Matplotlib", "Seaborn", "Jupyter", "Apache Spark",
-        "Hadoop", "Kafka", "Elasticsearch", "Tableau", "Power BI", "Looker", "D3.js", "Data Visualization",
-        "Natural Language Processing", "Computer Vision", "Neural Networks", "Big Data", "ETL", "Data Mining",
-        
-        // Industrial & Engineering
-        "Industrial Automation", "PLC Programming", "SCADA", "HMI", "Process Control", "DCS", "MES",
-        "Instrumentation", "Calibration", "Maintenance", "Troubleshooting", "Safety Systems", "SIL",
-        "Pressure Transmitters", "Flow Measurement", "Temperature Sensors", "Level Measurement", "pH Sensors",
-        "Control Valves", "Actuators", "VFDs", "Motor Control", "Power Systems", "Electrical Design",
-        "Fieldbus", "HART Protocol", "Modbus", "Profibus", "Ethernet/IP", "Foundation Fieldbus", "DeviceNet",
-        "Electrical Safety", "Explosion Proof", "Intrinsic Safety", "Loop Testing", "Signal Processing",
-        
-        // Web & Mobile Development
-        "API Development", "REST", "GraphQL", "SOAP", "gRPC", "WebSocket", "Progressive Web Apps", "Single Page Applications",
-        "Responsive Design", "Cross-browser Compatibility", "Web Performance", "SEO", "Accessibility", "WCAG",
-        "Chrome DevTools", "Webpack", "Babel", "NPM", "Yarn", "ESLint", "Prettier", "Jest", "Cypress",
-        
-        // Security & Testing
-        "Network Security", "Cybersecurity", "Penetration Testing", "Encryption", "PKI", "OAuth", "SAML",
-        "Web Security", "Application Security", "Vulnerability Assessment", "Security Auditing", "GDPR", "HIPAA",
-        "Testing", "Unit Testing", "Integration Testing", "Automation", "Selenium", "TestNG", "JUnit",
-        "Load Testing", "Performance Testing", "Security Testing", "API Testing", "Mobile Testing"
+        "API Development", "REST", "GraphQL", "Microservices", "DevOps", "CI/CD", "Testing", "Automation"
       ],
       functional_skills: [
-        // Management & Leadership
         "Project Management", "Team Leadership", "Strategic Planning", "Business Analysis", "Product Management",
         "Requirements Gathering", "Stakeholder Management", "Change Management", "Risk Assessment", "Risk Management",
         "Process Improvement", "Quality Control", "Quality Assurance", "Customer Service", "Sales", "Marketing",
-        "Digital Marketing", "Content Marketing", "Social Media Marketing", "Email Marketing", "SEO/SEM",
-        
-        // Business Operations
-        "Human Resources", "Training Development", "Performance Management", "Recruitment", "Talent Acquisition",
-        "Compensation Planning", "Employee Relations", "Organizational Development", "Succession Planning",
-        "Financial Planning", "Budget Management", "Cost Analysis", "Revenue Optimization", "Financial Modeling",
-        "Investment Analysis", "Accounting", "Bookkeeping", "Tax Preparation", "Auditing", "Compliance",
-        
-        // Operations & Supply Chain
-        "Operations Management", "Supply Chain Management", "Logistics", "Inventory Management", "Procurement",
-        "Vendor Management", "Contract Management", "Negotiation", "Lean Manufacturing", "Six Sigma",
-        "Continuous Improvement", "Root Cause Analysis", "Quality Management", "ISO Standards", "Kaizen"
+        "Human Resources", "Training Development", "Performance Management", "Recruitment", "Financial Planning"
       ],
       soft_skills: [
-        // Core Interpersonal Skills
-        "Communication", "Verbal Communication", "Written Communication", "Nonverbal Communication",
-        "Leadership", "Team Leadership", "Servant Leadership", "Transformational Leadership", "Situational Leadership",
-        "Teamwork", "Collaboration", "Cross-functional Collaboration", "Remote Collaboration", "Team Building",
-        
-        // Cognitive Skills
-        "Problem Solving", "Complex Problem Solving", "Analytical Problem Solving", "Creative Problem Solving",
-        "Critical Thinking", "Systems Thinking", "Design Thinking", "Strategic Thinking", "Logical Reasoning",
-        "Decision Making", "Data-driven Decision Making", "Ethical Decision Making", "Quick Decision Making",
-        
-        // Personal Effectiveness
-        "Adaptability", "Flexibility", "Agility", "Resilience", "Stress Management", "Change Management",
-        "Creativity", "Innovation", "Artistic Creativity", "Technical Creativity", "Strategic Creativity",
-        "Time Management", "Priority Management", "Deadline Management", "Multi-tasking", "Task Organization",
-        "Organization", "Planning", "Strategic Planning", "Project Planning", "Resource Planning",
-        
-        // Professional Skills
-        "Attention to Detail", "Quality Focus", "Accuracy", "Thoroughness", "Precision", "Reliability",
-        "Accountability", "Responsibility", "Integrity", "Ethics", "Professionalism", "Work Ethic",
-        "Initiative", "Self-Motivation", "Self-Direction", "Proactivity", "Goal Orientation", "Results Orientation"
+        "Communication", "Leadership", "Teamwork", "Problem Solving", "Critical Thinking", "Adaptability",
+        "Creativity", "Time Management", "Organization", "Attention to Detail", "Decision Making", "Conflict Resolution",
+        "Emotional Intelligence", "Interpersonal Skills", "Presentation Skills", "Public Speaking", "Writing"
       ]
     };
     
-    // Combine all skills
-    const allSkillsFromBase = [...Object.values(baseTaxonomy).flat()];
-    const combinedSkills = [...new Set([...allSkillsFromBase, ...supabaseSkills])];
-    
-    console.log(`Total combined skills: ${combinedSkills.length}`);
-    console.log(`Base taxonomy skills: ${allSkillsFromBase.length}`);
-    console.log(`Supabase skills: ${supabaseSkills.length}`);
+    // Combine Supabase skills with base taxonomy
+    const combinedSkills = [...new Set([...allSkills, ...Object.values(baseTaxonomy).flat()])];
     
     // Categorize skills intelligently
-    const enhancedTaxonomy = categorizeSkills(combinedSkills, supabaseSkillsWithTypes);
+    const enhancedTaxonomy = categorizeSkills(combinedSkills, skillsData);
     
     console.log(`Final taxonomy - Technical: ${enhancedTaxonomy.technical_skills.length}, Functional: ${enhancedTaxonomy.functional_skills.length}, Soft: ${enhancedTaxonomy.soft_skills.length}`);
     
-    return enhancedTaxonomy;
+    return { taxonomy: enhancedTaxonomy, skillsData };
     
   } catch (error) {
     console.error('Error loading skills taxonomy:', error);
     // Return base taxonomy as fallback
     return {
-      technical_skills: ["JavaScript", "Python", "Java", "React", "SQL", "AWS", "Docker", "Git"],
-      functional_skills: ["Project Management", "Business Analysis", "Marketing", "Sales"],
-      soft_skills: ["Communication", "Leadership", "Problem Solving", "Teamwork"]
+      taxonomy: {
+        technical_skills: ["JavaScript", "Python", "Java", "React", "SQL", "AWS", "Docker", "Git"],
+        functional_skills: ["Project Management", "Business Analysis", "Marketing", "Sales"],
+        soft_skills: ["Communication", "Leadership", "Problem Solving", "Teamwork"]
+      },
+      skillsData: []
     };
   }
 }
 
 // Intelligent skill categorization with Supabase type mapping
-function categorizeSkills(skills: string[], typedSkills: { skill: string; type: string }[] = []): SkillTaxonomy {
+function categorizeSkills(skills: string[], skillsData: SkillData[] = []): SkillTaxonomy {
   const technical: string[] = [];
   const functional: string[] = [];
   const soft: string[] = [];
   
-  // Create a map of skills to their Supabase types
+  // Create a map of skills to their Supabase types (case-insensitive)
   const skillTypeMap = new Map();
-  typedSkills.forEach(({ skill, type }) => {
-    skillTypeMap.set(skill.toLowerCase(), type);
+  skillsData.forEach(({ canonical, mappedTerms, type }) => {
+    skillTypeMap.set(canonical.toLowerCase(), type);
+    mappedTerms.forEach(term => {
+      if (term && term.trim()) {
+        skillTypeMap.set(term.toLowerCase().trim(), type);
+      }
+    });
   });
   
   const technicalKeywords = [
@@ -347,11 +301,14 @@ function categorizeSkills(skills: string[], typedSkills: { skill: string; type: 
   };
 }
 
-// Fuzzy matching with context extraction and confidence filtering
-function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy): SkillMatch[] {
+// Enhanced skill extraction with full word matching, mapped terms, and case-insensitive matching
+function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy, skillsData: SkillData[]): SkillMatch[] {
   const skills: SkillMatch[] = [];
   const lowerText = text.toLowerCase();
   const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+  
+  // Create a comprehensive skill map with all variations
+  const skillMap = new Map<string, { canonical: string; category: string; type: string }>();
   
   // Process each skill category
   const categories = [
@@ -360,91 +317,104 @@ function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy): SkillM
     { name: 'soft', skills: taxonomy.soft_skills }
   ];
   
+  // Build skill map with canonical and mapped terms
   categories.forEach(category => {
     category.skills.forEach(skill => {
       const skillLower = skill.toLowerCase();
-      const contexts: string[] = [];
-      let frequency = 0;
-      let confidence = 0;
       
-      // Direct exact match
-      const exactMatches = (lowerText.match(new RegExp(`\\b${skillLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g')) || []).length;
-      frequency += exactMatches * 3; // Higher weight for exact matches
-      confidence += exactMatches > 0 ? 30 : 0;
+      // Find corresponding skill data
+      const skillData = skillsData.find(sd => 
+        sd.canonical.toLowerCase() === skillLower ||
+        sd.mappedTerms.some(mt => mt.toLowerCase() === skillLower)
+      );
       
-      // Partial matches and variations
-      const words = skillLower.split(/\s+/);
-      if (words.length > 1) {
-        // Multi-word skills: check if all words present
-        const allWordsPresent = words.every(word => lowerText.includes(word));
-        if (allWordsPresent) {
-          frequency += 2;
-          confidence += 20;
-        }
-      }
-      
-      // Fuzzy matching for common variations
-      const variations = generateSkillVariations(skill);
-      variations.forEach(variation => {
-        const variationMatches = (lowerText.match(new RegExp(`\\b${variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g')) || []).length;
-        frequency += variationMatches;
-        confidence += variationMatches > 0 ? 10 : 0;
+      // Add canonical term
+      skillMap.set(skillLower, {
+        canonical: skill,
+        category: category.name,
+        type: skillData?.type || 'Unknown'
       });
       
-      // Extract contexts where skill appears
-      if (frequency > 0) {
-        sentences.forEach(sentence => {
-          const sentenceLower = sentence.toLowerCase();
-          if (sentenceLower.includes(skillLower) || 
-              variations.some(v => sentenceLower.includes(v))) {
-            contexts.push(sentence.trim().substring(0, 200));
+      // Add mapped terms if available
+      if (skillData) {
+        skillData.mappedTerms.forEach(mappedTerm => {
+          if (mappedTerm && mappedTerm.trim()) {
+            skillMap.set(mappedTerm.toLowerCase().trim(), {
+              canonical: skillData.canonical, // Use canonical as the primary name
+              category: category.name,
+              type: skillData.type
+            });
           }
-        });
-        
-        // Remove duplicate contexts
-        const uniqueContexts = [...new Set(contexts)].slice(0, 3);
-        
-        skills.push({
-          skill,
-          frequency,
-          contexts: uniqueContexts,
-          category: category.name,
-          confidence: Math.min(confidence, 100)
         });
       }
     });
   });
   
-  // Filter out skills with confidence <= 10% and sort by frequency and confidence
-  return skills
-    .filter(skill => skill.frequency > 0 && skill.confidence > 10) // Filter out low confidence skills
+  console.log(`Built skill map with ${skillMap.size} total skill variations`);
+  
+  // Extract skills with full word matching
+  const foundSkills = new Map<string, SkillMatch>();
+  
+  skillMap.forEach((skillInfo, skillVariation) => {
+    const contexts: string[] = [];
+    let frequency = 0;
+    let confidence = 0;
+    
+    // Create regex for full word matching (case-insensitive)
+    // Escape special regex characters and ensure word boundaries
+    const escapedSkill = skillVariation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escapedSkill}\\b`, 'gi');
+    
+    // Count full word matches
+    const matches = lowerText.match(regex);
+    if (matches) {
+      frequency = matches.length;
+      confidence = Math.min(frequency * 25, 100); // 25% confidence per match, max 100%
+      
+      // Extract contexts where skill appears
+      sentences.forEach(sentence => {
+        const sentenceLower = sentence.toLowerCase();
+        if (regex.test(sentenceLower)) {
+          contexts.push(sentence.trim().substring(0, 200));
+          regex.lastIndex = 0; // Reset regex for next test
+        }
+      });
+      
+      // Remove duplicate contexts
+      const uniqueContexts = [...new Set(contexts)].slice(0, 3);
+      
+      // Use canonical name as the key to avoid duplicates
+      const canonicalName = skillInfo.canonical;
+      
+      if (foundSkills.has(canonicalName)) {
+        // Merge with existing entry
+        const existing = foundSkills.get(canonicalName)!;
+        existing.frequency += frequency;
+        existing.confidence = Math.min(existing.confidence + confidence, 100);
+        existing.contexts = [...new Set([...existing.contexts, ...uniqueContexts])].slice(0, 3);
+      } else {
+        // Create new entry
+        foundSkills.set(canonicalName, {
+          skill: canonicalName,
+          frequency,
+          contexts: uniqueContexts,
+          category: skillInfo.category,
+          confidence
+        });
+      }
+    }
+  });
+  
+  // Convert to array and filter by confidence > 10%
+  const result = Array.from(foundSkills.values())
+    .filter(skill => skill.confidence > 10)
     .sort((a, b) => (b.frequency * b.confidence) - (a.frequency * a.confidence))
-    .slice(0, 50); // Increased to show more high-quality skills
-}
-
-// Generate common variations of skills
-function generateSkillVariations(skill: string): string[] {
-  const variations = [skill.toLowerCase()];
-  const skillLower = skill.toLowerCase();
+    .slice(0, 50);
   
-  // Common programming language variations
-  if (skillLower === 'javascript') variations.push('js', 'node.js', 'nodejs');
-  if (skillLower === 'python') variations.push('py', 'python3');
-  if (skillLower === 'typescript') variations.push('ts');
-  if (skillLower === 'machine learning') variations.push('ml', 'artificial intelligence', 'ai');
-  if (skillLower === 'database') variations.push('db', 'databases');
-  if (skillLower === 'api development') variations.push('api', 'apis', 'rest api', 'web api');
+  console.log(`Found ${result.length} skills with >10% confidence`);
+  console.log('Top 10 skills:', result.slice(0, 10).map(s => `${s.skill} (${s.confidence}%)`));
   
-  // Process control variations
-  if (skillLower === 'plc programming') variations.push('plc', 'programmable logic controller');
-  if (skillLower === 'scada') variations.push('supervisory control', 'data acquisition');
-  if (skillLower === 'instrumentation') variations.push('instruments', 'measurement');
-  
-  // Add plural/singular variations
-  if (!skillLower.endsWith('s')) variations.push(skillLower + 's');
-  if (skillLower.endsWith('s')) variations.push(skillLower.slice(0, -1));
-  
-  return variations;
+  return result;
 }
 
 // Enhanced analysis with domain detection
@@ -531,18 +501,18 @@ serve(async (req) => {
     // Extract text with enhanced processing
     const extractedText = await extractTextFromFile(file);
     console.log(`Extracted text length: ${extractedText.length} characters`);
-    console.log(`First 500 chars: ${extractedText.substring(0, 500)}`);
 
     if (!extractedText || extractedText.length < 50) {
       throw new Error('Could not extract sufficient text from file. Please ensure the file contains readable text content.');
     }
 
-    // Load skills taxonomy
-    const taxonomy = await loadSkillsTaxonomy();
+    // Load skills taxonomy and data
+    const { taxonomy, skillsData } = await loadSkillsTaxonomy();
     console.log(`Loaded taxonomy with ${Object.values(taxonomy).flat().length} total skills`);
+    console.log(`Loaded ${skillsData.length} skill data records from Supabase`);
 
-    // Extract skills with fuzzy matching and confidence filtering
-    const matchedSkills = extractSkillsWithContext(extractedText, taxonomy);
+    // Extract skills with enhanced matching
+    const matchedSkills = extractSkillsWithContext(extractedText, taxonomy, skillsData);
     console.log(`Found ${matchedSkills.length} high-confidence skill matches (>10% confidence)`);
 
     // Generate comprehensive analysis
