@@ -27,9 +27,8 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     accept: {
       'application/pdf': ['.pdf'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
       'application/msword': ['.doc'],
-      'application/vnd.ms-powerpoint': ['.ppt']
+      'text/plain': ['.txt']
     },
     maxFiles: 1,
     disabled: isProcessing
@@ -73,7 +72,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
               {isDragActive ? 'Drop your file here' : 'Upload Course File'}
             </p>
             <p className="text-sm text-slate-500 mt-1">
-              Supports PDF, DOCX, PPTX files (max 50MB)
+              Supports PDF, DOCX, TXT files (max 50MB)
             </p>
           </div>
         </div>
@@ -83,7 +82,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-center space-x-2 text-red-600">
             <AlertCircle className="h-4 w-4" />
-            <span className="text-sm">Unsupported file type. Please upload PDF, DOCX, or PPTX files.</span>
+            <span className="text-sm">Unsupported file type. Please upload PDF, DOCX, or TXT files.</span>
           </div>
         </div>
       )}

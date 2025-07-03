@@ -1,19 +1,33 @@
 
 import React, { useState } from 'react';
 import { FileUploader } from '@/components/FileUploader';
-import { AnalysisResults } from '@/components/AnalysisResults';
+import { EnhancedAnalysisResults } from '@/components/EnhancedAnalysisResults';
 import { Header } from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface SkillMatch {
+  name: string;
+  frequency: number;
+  category: string;
+  confidence: number;
+  contexts: string[];
+}
+
 export interface AnalysisResult {
-  keywords: string[];
+  skills: SkillMatch[];
   domains: string[];
-  skills: string[];
+  summary: string;
+  metadata: {
+    textLength: number;
+    skillsFound: number;
+    processedAt: string;
+  };
   fileInfo: {
     name: string;
     size: number;
     type: string;
+    sizeFormatted: string;
   };
 }
 
@@ -33,8 +47,8 @@ const Index = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      // Call the Supabase edge function
-      const { data, error } = await supabase.functions.invoke('analyze-course', {
+      // Call the enhanced Supabase edge function
+      const { data, error } = await supabase.functions.invoke('analyze-skills', {
         body: formData,
       });
 
@@ -48,7 +62,7 @@ const Index = () => {
       
       toast({
         title: "Analysis Complete",
-        description: `Found ${data.skills?.length || 0} skills and ${data.keywords?.length || 0} keywords from your course content.`,
+        description: `Found ${data.skills?.length || 0} skills across ${data.domains?.length || 0} domains from your ${data.fileInfo?.sizeFormatted || 'file'}.`,
       });
     } catch (error) {
       console.error('Analysis error:', error);
@@ -71,11 +85,11 @@ const Index = () => {
           {/* Hero Section */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-4">
-              Course Content Analyzer
+              AI Skills Extractor
             </h1>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-              Upload your course materials and get intelligent keyword suggestions, 
-              domain classifications, and skill mappings for improved discoverability.
+              Upload your documents and get comprehensive skill analysis with taxonomy matching, 
+              frequency analysis, and contextual insights. Supports large files up to 50MB.
             </p>
           </div>
 
@@ -89,7 +103,7 @@ const Index = () => {
 
           {/* Results Section */}
           {(isAnalyzing || analysisResult) && (
-            <AnalysisResults 
+            <EnhancedAnalysisResults 
               result={analysisResult}
               isLoading={isAnalyzing}
             />

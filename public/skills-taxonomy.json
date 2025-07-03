@@ -1,0 +1,45 @@
+{
+  "technical_skills": [
+    "JavaScript", "Python", "Java", "C++", "React", "Node.js", "SQL", "MongoDB", "PostgreSQL", "MySQL",
+    "HTML", "CSS", "TypeScript", "Angular", "Vue.js", "PHP", "Ruby", "Go", "Rust", "Swift",
+    "Kubernetes", "Docker", "AWS", "Azure", "Google Cloud", "Linux", "Git", "Jenkins", "Terraform",
+    "Machine Learning", "Data Science", "Artificial Intelligence", "Deep Learning", "TensorFlow", "PyTorch",
+    "API Development", "REST", "GraphQL", "Microservices", "DevOps", "CI/CD", "Agile", "Scrum",
+    "Testing", "Unit Testing", "Integration Testing", "Automation", "Selenium", "Jest",
+    "Network Security", "Cybersecurity", "Penetration Testing", "Encryption", "Blockchain",
+    "Data Analytics", "Business Intelligence", "Tableau", "Power BI", "Excel", "R",
+    "Project Management", "Leadership", "Communication", "Problem Solving", "Critical Thinking",
+    "Process Optimization", "Quality Assurance", "Risk Management", "Compliance",
+    "Industrial Automation", "PLC Programming", "SCADA", "HMI", "Process Control",
+    "Instrumentation", "Calibration", "Maintenance", "Troubleshooting", "Safety Systems",
+    "Pressure Transmitters", "Flow Measurement", "Temperature Sensors", "Level Measurement",
+    "Control Valves", "Actuators", "Fieldbus", "HART Protocol", "Modbus", "Profibus",
+    "Electrical Safety", "Explosion Proof", "Intrinsic Safety", "Loop Testing",
+    "Configuration Management", "Documentation", "Technical Writing", "Training",
+    "Lean Manufacturing", "Six Sigma", "Continuous Improvement", "Root Cause Analysis",
+    "Environmental Compliance", "ISO Standards", "Regulatory Affairs", "Audit",
+    "Supply Chain", "Procurement", "Vendor Management", "Contract Negotiation",
+    "Financial Analysis", "Budgeting", "Cost Control", "Performance Metrics"
+  ],
+  "functional_skills": [
+    "Project Management", "Team Leadership", "Strategic Planning", "Business Analysis",
+    "Requirements Gathering", "Stakeholder Management", "Change Management", "Risk Assessment",
+    "Process Improvement", "Quality Control", "Customer Service", "Sales", "Marketing",
+    "Human Resources", "Training Development", "Performance Management", "Recruitment",
+    "Financial Planning", "Budget Management", "Cost Analysis", "Revenue Optimization",
+    "Operations Management", "Supply Chain Management", "Logistics", "Inventory Management",
+    "Regulatory Compliance", "Legal Affairs", "Contract Management", "Negotiation",
+    "Research and Development", "Innovation Management", "Product Development", "Market Research",
+    "Public Relations", "Communications", "Content Creation", "Social Media Management",
+    "Event Planning", "Partnership Development", "Business Development", "Account Management"
+  ],
+  "soft_skills": [
+    "Communication", "Leadership", "Teamwork", "Problem Solving", "Critical Thinking",
+    "Adaptability", "Creativity", "Time Management", "Organization", "Attention to Detail",
+    "Analytical Thinking", "Decision Making", "Conflict Resolution", "Emotional Intelligence",
+    "Interpersonal Skills", "Presentation Skills", "Public Speaking", "Writing",
+    "Active Listening", "Empathy", "Patience", "Flexibility", "Resilience",
+    "Initiative", "Self-Motivation", "Stress Management", "Work-Life Balance",
+    "Cultural Awareness", "Diversity and Inclusion", "Mentoring", "Coaching"
+  ]
+}
