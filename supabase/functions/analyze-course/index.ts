@@ -8,69 +8,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Helper function to extract text from PDF with memory optimization
-async function extractTextFromPDF(arrayBuffer: ArrayBuffer): Promise<string> {
+// Simplified text extraction to avoid memory issues
+async function extractTextFromFile(file: File): Promise<string> {
   try {
-    // Limit processing to first 100KB to prevent memory issues
-    const maxSize = 100 * 1024; // 100KB
-    const limitedBuffer = arrayBuffer.slice(0, Math.min(arrayBuffer.byteLength, maxSize));
+    // Limit file size drastically for memory safety
+    const maxSize = 50 * 1024; // 50KB only
+    const buffer = await file.arrayBuffer();
+    const limitedBuffer = buffer.slice(0, Math.min(buffer.byteLength, maxSize));
     
+    if (file.type === 'text/plain') {
+      const decoder = new TextDecoder();
+      return decoder.decode(limitedBuffer);
+    }
+    
+    // For binary files, just decode as text and extract readable parts
     const uint8Array = new Uint8Array(limitedBuffer);
     const text = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false }).decode(uint8Array);
     
-    // Extract readable text between common PDF markers (limit matches)
-    const textMatches = (text.match(/\(([^()]*)\)/g) || []).slice(0, 50);
+    // Extract only simple readable text patterns
+    const readable = text
+      .replace(/[^\w\s\-.,;:!?]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     
-    let extractedText = '';
-    
-    // Process parentheses content (common in PDF text objects)
-    textMatches.forEach(match => {
-      const cleanText = match.slice(1, -1)
-        .replace(/\\[rn]/g, ' ')
-        .replace(/\\[()]/g, '')
-        .replace(/[^\w\s\-.,;:!?]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      
-      if (cleanText.length > 3 && /[a-zA-Z]/.test(cleanText)) {
-        extractedText += cleanText + ' ';
-      }
-    });
-    
-    return extractedText.trim().substring(0, 5000); // Limit extracted text
+    return readable.substring(0, 1000); // Very limited text
   } catch (error) {
-    console.error('PDF parsing error:', error);
+    console.error('File parsing error:', error);
     return '';
   }
 }
 
-// Helper function to extract text from DOCX with memory optimization
-async function extractTextFromDOCX(arrayBuffer: ArrayBuffer): Promise<string> {
-  try {
-    // Limit processing to first 200KB to prevent memory issues
-    const maxSize = 200 * 1024; // 200KB
-    const limitedBuffer = arrayBuffer.slice(0, Math.min(arrayBuffer.byteLength, maxSize));
-    
-    const uint8Array = new Uint8Array(limitedBuffer);
-    const text = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false }).decode(uint8Array);
-    
-    // Look for text between XML tags (limit matches)
-    const textMatches = (text.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || []).slice(0, 100);
-    let extractedText = '';
-    
-    textMatches.forEach(match => {
-      const textContent = match.replace(/<w:t[^>]*>/, '').replace(/<\/w:t>/, '');
-      if (textContent.trim().length > 0) {
-        extractedText += textContent + ' ';
-      }
-    });
-    
-    return extractedText.trim().substring(0, 5000); // Limit extracted text
-  } catch (error) {
-    console.error('DOCX parsing error:', error);
-    return '';
-  }
-}
 
 // Helper function to analyze text and extract skills/keywords
 function analyzeTextContent(text: string): { keywords: string[], skills: string[] } {
@@ -195,32 +162,21 @@ serve(async (req) => {
       throw new Error('No file provided');
     }
 
-    // Check file size limit (5MB max)
-    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    // Check file size limit (1MB max for memory safety)
+    const maxFileSize = 1 * 1024 * 1024; // 1MB
     if (file.size > maxFileSize) {
-      throw new Error('File too large. Maximum size allowed is 5MB.');
+      throw new Error('File too large. Maximum size allowed is 1MB.');
     }
 
     console.log(`Processing file: ${file.name}, size: ${file.size}, type: ${file.type}`);
 
-    // Read file content
-    const arrayBuffer = await file.arrayBuffer();
-    let extractedText = '';
-
-    // Extract text based on file type
-    if (file.type === 'application/pdf') {
-      extractedText = await extractTextFromPDF(arrayBuffer);
-    } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-      extractedText = await extractTextFromDOCX(arrayBuffer);
-    } else if (file.type === 'text/plain') {
-      const decoder = new TextDecoder();
-      extractedText = decoder.decode(arrayBuffer);
-    }
+    // Extract text using simplified function
+    const extractedText = await extractTextFromFile(file);
 
     console.log(`Extracted text length: ${extractedText.length}`);
     console.log(`First 200 chars: ${extractedText.substring(0, 200)}`);
 
-    if (!extractedText || extractedText.length < 50) {
+    if (!extractedText || extractedText.length < 10) {
       throw new Error('Could not extract sufficient text from file');
     }
 
