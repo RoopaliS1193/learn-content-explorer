@@ -111,42 +111,35 @@ async function extractTextFromFile(file: File): Promise<string> {
 
 // Load skills taxonomy
 async function loadSkillsTaxonomy(): Promise<SkillTaxonomy> {
-  try {
-    // Try to load from a public URL or use embedded taxonomy
-    const response = await fetch('https://your-domain.com/skills-taxonomy.json').catch(() => null);
-    
-    if (response && response.ok) {
-      return await response.json();
-    }
-    
-    // Fallback embedded taxonomy
-    return {
-      technical_skills: [
-        "JavaScript", "Python", "Java", "C++", "React", "Node.js", "SQL", "MongoDB", "PostgreSQL",
-        "HTML", "CSS", "TypeScript", "Angular", "Vue.js", "PHP", "Ruby", "Go", "Rust",
-        "Kubernetes", "Docker", "AWS", "Azure", "Google Cloud", "Linux", "Git", "Jenkins",
-        "Machine Learning", "Data Science", "Artificial Intelligence", "TensorFlow", "PyTorch",
-        "API Development", "REST", "GraphQL", "Microservices", "DevOps", "CI/CD",
-        "Network Security", "Cybersecurity", "Blockchain", "Data Analytics", "Tableau",
-        "Industrial Automation", "PLC Programming", "SCADA", "HMI", "Process Control",
-        "Instrumentation", "Calibration", "Pressure Transmitters", "Flow Measurement"
-      ],
-      functional_skills: [
-        "Project Management", "Team Leadership", "Strategic Planning", "Business Analysis",
-        "Requirements Gathering", "Change Management", "Process Improvement", "Quality Control",
-        "Financial Planning", "Operations Management", "Supply Chain Management",
-        "Regulatory Compliance", "Research and Development", "Product Development"
-      ],
-      soft_skills: [
-        "Communication", "Leadership", "Teamwork", "Problem Solving", "Critical Thinking",
-        "Adaptability", "Creativity", "Time Management", "Organization", "Analytical Thinking",
-        "Decision Making", "Emotional Intelligence", "Presentation Skills"
-      ]
-    };
-  } catch (error) {
-    console.error('Error loading skills taxonomy:', error);
-    throw new Error('Failed to load skills taxonomy');
-  }
+  console.log('Loading skills taxonomy...');
+  
+  // Use embedded comprehensive taxonomy
+  const taxonomy = {
+    technical_skills: [
+      "JavaScript", "Python", "Java", "C++", "React", "Node.js", "SQL", "MongoDB", "PostgreSQL",
+      "HTML", "CSS", "TypeScript", "Angular", "Vue.js", "PHP", "Ruby", "Go", "Rust",
+      "Kubernetes", "Docker", "AWS", "Azure", "Google Cloud", "Linux", "Git", "Jenkins",
+      "Machine Learning", "Data Science", "Artificial Intelligence", "TensorFlow", "PyTorch",
+      "API Development", "REST", "GraphQL", "Microservices", "DevOps", "CI/CD",
+      "Network Security", "Cybersecurity", "Blockchain", "Data Analytics", "Tableau",
+      "Industrial Automation", "PLC Programming", "SCADA", "HMI", "Process Control",
+      "Instrumentation", "Calibration", "Pressure Transmitters", "Flow Measurement"
+    ],
+    functional_skills: [
+      "Project Management", "Team Leadership", "Strategic Planning", "Business Analysis",
+      "Requirements Gathering", "Change Management", "Process Improvement", "Quality Control",
+      "Financial Planning", "Operations Management", "Supply Chain Management",
+      "Regulatory Compliance", "Research and Development", "Product Development"
+    ],
+    soft_skills: [
+      "Communication", "Leadership", "Teamwork", "Problem Solving", "Critical Thinking",
+      "Adaptability", "Creativity", "Time Management", "Organization", "Analytical Thinking",
+      "Decision Making", "Emotional Intelligence", "Presentation Skills"
+    ]
+  };
+  
+  console.log(`Loaded taxonomy with ${Object.values(taxonomy).flat().length} total skills`);
+  return taxonomy;
 }
 
 // Fuzzy matching with context extraction
@@ -333,6 +326,8 @@ serve(async (req) => {
     // Extract text with enhanced processing
     const extractedText = await extractTextFromFile(file);
     console.log(`Extracted text length: ${extractedText.length} characters`);
+    console.log(`First 500 chars: ${extractedText.substring(0, 500)}`);
+    console.log(`Unique file hash: ${file.name}-${file.size}-${file.lastModified || Date.now()}`);
 
     if (!extractedText || extractedText.length < 50) {
       throw new Error('Could not extract sufficient text from file. Please ensure the file contains readable text content.');
