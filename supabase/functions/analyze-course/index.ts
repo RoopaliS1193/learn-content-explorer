@@ -8,16 +8,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Helper function to extract text from PDF
+// Helper function to extract text from PDF with memory optimization
 async function extractTextFromPDF(arrayBuffer: ArrayBuffer): Promise<string> {
   try {
-    // Simple PDF text extraction - looking for readable text patterns
-    const uint8Array = new Uint8Array(arrayBuffer);
+    // Limit processing to first 100KB to prevent memory issues
+    const maxSize = 100 * 1024; // 100KB
+    const limitedBuffer = arrayBuffer.slice(0, Math.min(arrayBuffer.byteLength, maxSize));
+    
+    const uint8Array = new Uint8Array(limitedBuffer);
     const text = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false }).decode(uint8Array);
     
-    // Extract readable text between common PDF markers
-    const textMatches = text.match(/\(([^()]*)\)/g) || [];
-    const streamMatches = text.match(/stream\s+(.*?)\s+endstream/gs) || [];
+    // Extract readable text between common PDF markers (limit matches)
+    const textMatches = (text.match(/\(([^()]*)\)/g) || []).slice(0, 50);
     
     let extractedText = '';
     
@@ -35,34 +37,25 @@ async function extractTextFromPDF(arrayBuffer: ArrayBuffer): Promise<string> {
       }
     });
     
-    // Also try to extract from streams
-    streamMatches.forEach(match => {
-      const streamContent = match.replace(/^stream\s+/, '').replace(/\s+endstream$/, '');
-      const readable = streamContent.replace(/[^\w\s\-.,;:!?]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      
-      if (readable.length > 10 && /[a-zA-Z]/.test(readable)) {
-        extractedText += readable + ' ';
-      }
-    });
-    
-    return extractedText.trim();
+    return extractedText.trim().substring(0, 5000); // Limit extracted text
   } catch (error) {
     console.error('PDF parsing error:', error);
     return '';
   }
 }
 
-// Helper function to extract text from DOCX
+// Helper function to extract text from DOCX with memory optimization
 async function extractTextFromDOCX(arrayBuffer: ArrayBuffer): Promise<string> {
   try {
-    // Basic DOCX text extraction by looking for XML content
-    const uint8Array = new Uint8Array(arrayBuffer);
+    // Limit processing to first 200KB to prevent memory issues
+    const maxSize = 200 * 1024; // 200KB
+    const limitedBuffer = arrayBuffer.slice(0, Math.min(arrayBuffer.byteLength, maxSize));
+    
+    const uint8Array = new Uint8Array(limitedBuffer);
     const text = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false }).decode(uint8Array);
     
-    // Look for text between XML tags
-    const textMatches = text.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || [];
+    // Look for text between XML tags (limit matches)
+    const textMatches = (text.match(/<w:t[^>]*>([^<]*)<\/w:t>/g) || []).slice(0, 100);
     let extractedText = '';
     
     textMatches.forEach(match => {
@@ -72,7 +65,7 @@ async function extractTextFromDOCX(arrayBuffer: ArrayBuffer): Promise<string> {
       }
     });
     
-    return extractedText.trim();
+    return extractedText.trim().substring(0, 5000); // Limit extracted text
   } catch (error) {
     console.error('DOCX parsing error:', error);
     return '';
@@ -200,6 +193,12 @@ serve(async (req) => {
     
     if (!file) {
       throw new Error('No file provided');
+    }
+
+    // Check file size limit (5MB max)
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxFileSize) {
+      throw new Error('File too large. Maximum size allowed is 5MB.');
     }
 
     console.log(`Processing file: ${file.name}, size: ${file.size}, type: ${file.type}`);
