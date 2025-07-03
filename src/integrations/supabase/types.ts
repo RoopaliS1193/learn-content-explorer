@@ -11,13 +11,22 @@ export type Database = {
     Tables: {
       "Skill library": {
         Row: {
-          Skill: string
+          "Canonical Term": string
+          Industry: string | null
+          "Mapped Terms": string[] | null
+          "Skill Type": Database["public"]["Enums"]["Skill Type"] | null
         }
         Insert: {
-          Skill: string
+          "Canonical Term": string
+          Industry?: string | null
+          "Mapped Terms"?: string[] | null
+          "Skill Type"?: Database["public"]["Enums"]["Skill Type"] | null
         }
         Update: {
-          Skill?: string
+          "Canonical Term"?: string
+          Industry?: string | null
+          "Mapped Terms"?: string[] | null
+          "Skill Type"?: Database["public"]["Enums"]["Skill Type"] | null
         }
         Relationships: []
       }
@@ -29,7 +38,11 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      "Skill Type":
+        | "Technical Skill"
+        | "Functional Skill"
+        | "Leadership Skill"
+        | "Soft Skill"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -144,6 +157,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      "Skill Type": [
+        "Technical Skill",
+        "Functional Skill",
+        "Leadership Skill",
+        "Soft Skill",
+      ],
+    },
   },
 } as const

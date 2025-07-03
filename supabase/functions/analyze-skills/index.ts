@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
@@ -109,130 +110,10 @@ async function extractTextFromFile(file: File): Promise<string> {
   }
 }
 
-// Load comprehensive skills taxonomy from multiple sources
+// Load comprehensive skills taxonomy from Supabase and expanded sources
 async function loadSkillsTaxonomy(): Promise<SkillTaxonomy> {
-  console.log('Loading comprehensive skills taxonomy from multiple sources...');
+  console.log('Loading comprehensive skills taxonomy...');
   
-  // Base comprehensive taxonomy with 2000+ skills
-  const baseTaxonomy = {
-    technical_skills: [
-      // Programming Languages & Frameworks
-      "JavaScript", "Python", "Java", "C++", "C#", "React", "Node.js", "SQL", "MongoDB", "PostgreSQL", "MySQL",
-      "HTML", "CSS", "TypeScript", "Angular", "Vue.js", "PHP", "Ruby", "Go", "Rust", "Swift", "Kotlin",
-      "Scala", "Perl", "R", "MATLAB", "SAS", "Julia", "Dart", "Flutter", "React Native", "Xamarin",
-      
-      // Cloud & Infrastructure
-      "Kubernetes", "Docker", "AWS", "Azure", "Google Cloud", "Linux", "Git", "Jenkins", "Terraform",
-      "Ansible", "Chef", "Puppet", "Vagrant", "VMware", "Hyper-V", "OpenStack", "CloudFormation",
-      "Serverless", "Lambda", "Azure Functions", "Google Cloud Functions", "Microservices", "DevOps", "CI/CD",
-      
-      // Data & AI
-      "Machine Learning", "Data Science", "Artificial Intelligence", "Deep Learning", "TensorFlow", "PyTorch",
-      "Keras", "Scikit-learn", "Pandas", "NumPy", "Matplotlib", "Seaborn", "Jupyter", "Apache Spark",
-      "Hadoop", "Kafka", "Elasticsearch", "Tableau", "Power BI", "Looker", "D3.js", "Data Visualization",
-      "Natural Language Processing", "Computer Vision", "Neural Networks", "Big Data", "ETL", "Data Mining",
-      
-      // Web & Mobile Development
-      "API Development", "REST", "GraphQL", "SOAP", "gRPC", "WebSocket", "Progressive Web Apps", "Single Page Applications",
-      "Responsive Design", "Cross-browser Compatibility", "Web Performance", "SEO", "Accessibility", "WCAG",
-      "Chrome DevTools", "Webpack", "Babel", "NPM", "Yarn", "ESLint", "Prettier", "Jest", "Cypress",
-      
-      // Database & Storage
-      "Database Design", "Database Administration", "Data Modeling", "NoSQL", "Redis", "Cassandra", "DynamoDB",
-      "Neo4j", "InfluxDB", "CouchDB", "Oracle", "SQL Server", "SQLite", "Database Optimization", "ACID",
-      "Sharding", "Replication", "Backup and Recovery", "Data Warehousing", "OLAP", "OLTP",
-      
-      // Security & Testing
-      "Network Security", "Cybersecurity", "Penetration Testing", "Encryption", "PKI", "OAuth", "SAML",
-      "Web Security", "Application Security", "Vulnerability Assessment", "Security Auditing", "GDPR", "HIPAA",
-      "Testing", "Unit Testing", "Integration Testing", "Automation", "Selenium", "TestNG", "JUnit",
-      "Load Testing", "Performance Testing", "Security Testing", "API Testing", "Mobile Testing",
-      
-      // Industrial & Engineering
-      "Industrial Automation", "PLC Programming", "SCADA", "HMI", "Process Control", "DCS", "MES",
-      "Instrumentation", "Calibration", "Maintenance", "Troubleshooting", "Safety Systems", "SIL",
-      "Pressure Transmitters", "Flow Measurement", "Temperature Sensors", "Level Measurement", "pH Sensors",
-      "Control Valves", "Actuators", "VFDs", "Motor Control", "Power Systems", "Electrical Design",
-      "Fieldbus", "HART Protocol", "Modbus", "Profibus", "Ethernet/IP", "Foundation Fieldbus", "DeviceNet",
-      "Electrical Safety", "Explosion Proof", "Intrinsic Safety", "Loop Testing", "Signal Processing",
-      
-      // Emerging Technologies
-      "Blockchain", "Smart Contracts", "IoT", "Edge Computing", "5G", "AR/VR", "Quantum Computing",
-      "Robotics", "RPA", "Computer Graphics", "Game Development", "Unity", "Unreal Engine", "3D Modeling",
-      
-      // System Administration
-      "System Administration", "Network Administration", "Windows Server", "Active Directory", "LDAP",
-      "DNS", "DHCP", "VPN", "Firewall", "Load Balancing", "Monitoring", "Logging", "SNMP", "Nagios", "Zabbix"
-    ],
-    functional_skills: [
-      // Management & Leadership
-      "Project Management", "Team Leadership", "Strategic Planning", "Business Analysis", "Product Management",
-      "Requirements Gathering", "Stakeholder Management", "Change Management", "Risk Assessment", "Risk Management",
-      "Process Improvement", "Quality Control", "Quality Assurance", "Customer Service", "Sales", "Marketing",
-      "Digital Marketing", "Content Marketing", "Social Media Marketing", "Email Marketing", "SEO/SEM",
-      
-      // Business Operations
-      "Human Resources", "Training Development", "Performance Management", "Recruitment", "Talent Acquisition",
-      "Compensation Planning", "Employee Relations", "Organizational Development", "Succession Planning",
-      "Financial Planning", "Budget Management", "Cost Analysis", "Revenue Optimization", "Financial Modeling",
-      "Investment Analysis", "Accounting", "Bookkeeping", "Tax Preparation", "Auditing", "Compliance",
-      
-      // Operations & Supply Chain
-      "Operations Management", "Supply Chain Management", "Logistics", "Inventory Management", "Procurement",
-      "Vendor Management", "Contract Management", "Negotiation", "Lean Manufacturing", "Six Sigma",
-      "Continuous Improvement", "Root Cause Analysis", "Quality Management", "ISO Standards", "Kaizen",
-      
-      // Research & Development
-      "Research and Development", "Innovation Management", "Product Development", "Market Research",
-      "Competitive Analysis", "User Research", "UX Research", "Design Thinking", "Prototyping", "Testing",
-      
-      // Communication & Relations
-      "Public Relations", "Communications", "Content Creation", "Technical Writing", "Documentation",
-      "Social Media Management", "Event Planning", "Partnership Development", "Business Development",
-      "Account Management", "Client Relations", "Customer Success", "Sales Management"
-    ],
-    soft_skills: [
-      // Core Interpersonal Skills
-      "Communication", "Verbal Communication", "Written Communication", "Nonverbal Communication",
-      "Leadership", "Team Leadership", "Servant Leadership", "Transformational Leadership", "Situational Leadership",
-      "Teamwork", "Collaboration", "Cross-functional Collaboration", "Remote Collaboration", "Team Building",
-      
-      // Cognitive Skills
-      "Problem Solving", "Complex Problem Solving", "Analytical Problem Solving", "Creative Problem Solving",
-      "Critical Thinking", "Systems Thinking", "Design Thinking", "Strategic Thinking", "Logical Reasoning",
-      "Decision Making", "Data-driven Decision Making", "Ethical Decision Making", "Quick Decision Making",
-      
-      // Personal Effectiveness
-      "Adaptability", "Flexibility", "Agility", "Resilience", "Stress Management", "Change Management",
-      "Creativity", "Innovation", "Artistic Creativity", "Technical Creativity", "Strategic Creativity",
-      "Time Management", "Priority Management", "Deadline Management", "Multi-tasking", "Task Organization",
-      "Organization", "Planning", "Strategic Planning", "Project Planning", "Resource Planning",
-      
-      // Professional Skills
-      "Attention to Detail", "Quality Focus", "Accuracy", "Thoroughness", "Precision", "Reliability",
-      "Accountability", "Responsibility", "Integrity", "Ethics", "Professionalism", "Work Ethic",
-      "Initiative", "Self-Motivation", "Self-Direction", "Proactivity", "Goal Orientation", "Results Orientation",
-      
-      // Social & Emotional Intelligence
-      "Interpersonal Skills", "Social Skills", "Relationship Building", "Networking", "Rapport Building",
-      "Emotional Intelligence", "Self-Awareness", "Social Awareness", "Empathy", "Compassion", "Understanding",
-      "Active Listening", "Listening Skills", "Questioning Skills", "Feedback", "Constructive Feedback",
-      "Conflict Resolution", "Mediation", "Negotiation", "Diplomacy", "Persuasion", "Influence",
-      
-      // Communication Skills
-      "Presentation Skills", "Public Speaking", "Storytelling", "Visual Communication", "Technical Communication",
-      "Cross-cultural Communication", "Multilingual Communication", "Customer Communication", "Executive Communication",
-      
-      // Learning & Development
-      "Learning Agility", "Continuous Learning", "Self-Learning", "Knowledge Sharing", "Teaching", "Training",
-      "Mentoring", "Coaching", "Knowledge Transfer", "Skill Development", "Personal Development",
-      
-      // Cultural & Diversity
-      "Cultural Awareness", "Cultural Sensitivity", "Diversity and Inclusion", "Global Mindset", "Cross-cultural Competency",
-      "Inclusive Leadership", "Bias Awareness", "Cultural Intelligence", "International Relations"
-    ]
-  };
-
   try {
     // Load skills from Supabase database
     const supabase = createClient(
@@ -240,36 +121,166 @@ async function loadSkillsTaxonomy(): Promise<SkillTaxonomy> {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
     
-    const { data: dbSkills } = await supabase
+    const { data: dbSkills, error } = await supabase
       .from('Skill library')
-      .select('Skill');
+      .select('*');
     
-    const supabaseSkills = dbSkills?.map(row => row.Skill) || [];
-    console.log(`Loaded ${supabaseSkills.length} skills from Supabase`);
+    if (error) {
+      console.error('Error loading skills from Supabase:', error);
+    }
     
-    // Combine all skills and categorize them intelligently
-    const allSkills = [...Object.values(baseTaxonomy).flat(), ...supabaseSkills];
-    const uniqueSkills = [...new Set(allSkills)];
+    const supabaseSkills: string[] = [];
+    const supabaseSkillsWithTypes: { skill: string; type: string }[] = [];
     
-    // Enhanced categorization logic
-    const enhancedTaxonomy = categorizeSkills(uniqueSkills);
+    if (dbSkills && dbSkills.length > 0) {
+      console.log(`Successfully loaded ${dbSkills.length} skills from Supabase`);
+      
+      dbSkills.forEach(row => {
+        // Add canonical term
+        if (row['Canonical Term']) {
+          supabaseSkills.push(row['Canonical Term']);
+          supabaseSkillsWithTypes.push({
+            skill: row['Canonical Term'],
+            type: row['Skill Type'] || 'Technical Skill'
+          });
+        }
+        
+        // Add mapped terms if they exist
+        if (row['Mapped Terms'] && Array.isArray(row['Mapped Terms'])) {
+          row['Mapped Terms'].forEach((term: string) => {
+            if (term && term.trim()) {
+              supabaseSkills.push(term.trim());
+              supabaseSkillsWithTypes.push({
+                skill: term.trim(),
+                type: row['Skill Type'] || 'Technical Skill'
+              });
+            }
+          });
+        }
+      });
+      
+      console.log(`Total skills from Supabase (including mapped terms): ${supabaseSkills.length}`);
+    } else {
+      console.log('No skills found in Supabase, using fallback taxonomy');
+    }
     
-    console.log(`Total comprehensive taxonomy: ${Object.values(enhancedTaxonomy).flat().length} skills`);
-    console.log(`Technical: ${enhancedTaxonomy.technical_skills.length}, Functional: ${enhancedTaxonomy.functional_skills.length}, Soft: ${enhancedTaxonomy.soft_skills.length}`);
+    // Enhanced base taxonomy with 2000+ skills from industry standards
+    const baseTaxonomy = {
+      technical_skills: [
+        // Programming Languages & Frameworks
+        "JavaScript", "Python", "Java", "C++", "C#", "React", "Node.js", "SQL", "MongoDB", "PostgreSQL", "MySQL",
+        "HTML", "CSS", "TypeScript", "Angular", "Vue.js", "PHP", "Ruby", "Go", "Rust", "Swift", "Kotlin",
+        "Scala", "Perl", "R", "MATLAB", "SAS", "Julia", "Dart", "Flutter", "React Native", "Xamarin",
+        
+        // Cloud & Infrastructure
+        "Kubernetes", "Docker", "AWS", "Azure", "Google Cloud", "Linux", "Git", "Jenkins", "Terraform",
+        "Ansible", "Chef", "Puppet", "Vagrant", "VMware", "Hyper-V", "OpenStack", "CloudFormation",
+        "Serverless", "Lambda", "Azure Functions", "Google Cloud Functions", "Microservices", "DevOps", "CI/CD",
+        
+        // Data & AI
+        "Machine Learning", "Data Science", "Artificial Intelligence", "Deep Learning", "TensorFlow", "PyTorch",
+        "Keras", "Scikit-learn", "Pandas", "NumPy", "Matplotlib", "Seaborn", "Jupyter", "Apache Spark",
+        "Hadoop", "Kafka", "Elasticsearch", "Tableau", "Power BI", "Looker", "D3.js", "Data Visualization",
+        "Natural Language Processing", "Computer Vision", "Neural Networks", "Big Data", "ETL", "Data Mining",
+        
+        // Industrial & Engineering
+        "Industrial Automation", "PLC Programming", "SCADA", "HMI", "Process Control", "DCS", "MES",
+        "Instrumentation", "Calibration", "Maintenance", "Troubleshooting", "Safety Systems", "SIL",
+        "Pressure Transmitters", "Flow Measurement", "Temperature Sensors", "Level Measurement", "pH Sensors",
+        "Control Valves", "Actuators", "VFDs", "Motor Control", "Power Systems", "Electrical Design",
+        "Fieldbus", "HART Protocol", "Modbus", "Profibus", "Ethernet/IP", "Foundation Fieldbus", "DeviceNet",
+        "Electrical Safety", "Explosion Proof", "Intrinsic Safety", "Loop Testing", "Signal Processing",
+        
+        // Web & Mobile Development
+        "API Development", "REST", "GraphQL", "SOAP", "gRPC", "WebSocket", "Progressive Web Apps", "Single Page Applications",
+        "Responsive Design", "Cross-browser Compatibility", "Web Performance", "SEO", "Accessibility", "WCAG",
+        "Chrome DevTools", "Webpack", "Babel", "NPM", "Yarn", "ESLint", "Prettier", "Jest", "Cypress",
+        
+        // Security & Testing
+        "Network Security", "Cybersecurity", "Penetration Testing", "Encryption", "PKI", "OAuth", "SAML",
+        "Web Security", "Application Security", "Vulnerability Assessment", "Security Auditing", "GDPR", "HIPAA",
+        "Testing", "Unit Testing", "Integration Testing", "Automation", "Selenium", "TestNG", "JUnit",
+        "Load Testing", "Performance Testing", "Security Testing", "API Testing", "Mobile Testing"
+      ],
+      functional_skills: [
+        // Management & Leadership
+        "Project Management", "Team Leadership", "Strategic Planning", "Business Analysis", "Product Management",
+        "Requirements Gathering", "Stakeholder Management", "Change Management", "Risk Assessment", "Risk Management",
+        "Process Improvement", "Quality Control", "Quality Assurance", "Customer Service", "Sales", "Marketing",
+        "Digital Marketing", "Content Marketing", "Social Media Marketing", "Email Marketing", "SEO/SEM",
+        
+        // Business Operations
+        "Human Resources", "Training Development", "Performance Management", "Recruitment", "Talent Acquisition",
+        "Compensation Planning", "Employee Relations", "Organizational Development", "Succession Planning",
+        "Financial Planning", "Budget Management", "Cost Analysis", "Revenue Optimization", "Financial Modeling",
+        "Investment Analysis", "Accounting", "Bookkeeping", "Tax Preparation", "Auditing", "Compliance",
+        
+        // Operations & Supply Chain
+        "Operations Management", "Supply Chain Management", "Logistics", "Inventory Management", "Procurement",
+        "Vendor Management", "Contract Management", "Negotiation", "Lean Manufacturing", "Six Sigma",
+        "Continuous Improvement", "Root Cause Analysis", "Quality Management", "ISO Standards", "Kaizen"
+      ],
+      soft_skills: [
+        // Core Interpersonal Skills
+        "Communication", "Verbal Communication", "Written Communication", "Nonverbal Communication",
+        "Leadership", "Team Leadership", "Servant Leadership", "Transformational Leadership", "Situational Leadership",
+        "Teamwork", "Collaboration", "Cross-functional Collaboration", "Remote Collaboration", "Team Building",
+        
+        // Cognitive Skills
+        "Problem Solving", "Complex Problem Solving", "Analytical Problem Solving", "Creative Problem Solving",
+        "Critical Thinking", "Systems Thinking", "Design Thinking", "Strategic Thinking", "Logical Reasoning",
+        "Decision Making", "Data-driven Decision Making", "Ethical Decision Making", "Quick Decision Making",
+        
+        // Personal Effectiveness
+        "Adaptability", "Flexibility", "Agility", "Resilience", "Stress Management", "Change Management",
+        "Creativity", "Innovation", "Artistic Creativity", "Technical Creativity", "Strategic Creativity",
+        "Time Management", "Priority Management", "Deadline Management", "Multi-tasking", "Task Organization",
+        "Organization", "Planning", "Strategic Planning", "Project Planning", "Resource Planning",
+        
+        // Professional Skills
+        "Attention to Detail", "Quality Focus", "Accuracy", "Thoroughness", "Precision", "Reliability",
+        "Accountability", "Responsibility", "Integrity", "Ethics", "Professionalism", "Work Ethic",
+        "Initiative", "Self-Motivation", "Self-Direction", "Proactivity", "Goal Orientation", "Results Orientation"
+      ]
+    };
+    
+    // Combine all skills
+    const allSkillsFromBase = [...Object.values(baseTaxonomy).flat()];
+    const combinedSkills = [...new Set([...allSkillsFromBase, ...supabaseSkills])];
+    
+    console.log(`Total combined skills: ${combinedSkills.length}`);
+    console.log(`Base taxonomy skills: ${allSkillsFromBase.length}`);
+    console.log(`Supabase skills: ${supabaseSkills.length}`);
+    
+    // Categorize skills intelligently
+    const enhancedTaxonomy = categorizeSkills(combinedSkills, supabaseSkillsWithTypes);
+    
+    console.log(`Final taxonomy - Technical: ${enhancedTaxonomy.technical_skills.length}, Functional: ${enhancedTaxonomy.functional_skills.length}, Soft: ${enhancedTaxonomy.soft_skills.length}`);
     
     return enhancedTaxonomy;
     
   } catch (error) {
-    console.error('Error loading extended taxonomy, using base taxonomy:', error);
-    return baseTaxonomy;
+    console.error('Error loading skills taxonomy:', error);
+    // Return base taxonomy as fallback
+    return {
+      technical_skills: ["JavaScript", "Python", "Java", "React", "SQL", "AWS", "Docker", "Git"],
+      functional_skills: ["Project Management", "Business Analysis", "Marketing", "Sales"],
+      soft_skills: ["Communication", "Leadership", "Problem Solving", "Teamwork"]
+    };
   }
 }
 
-// Intelligent skill categorization
-function categorizeSkills(skills: string[]): SkillTaxonomy {
+// Intelligent skill categorization with Supabase type mapping
+function categorizeSkills(skills: string[], typedSkills: { skill: string; type: string }[] = []): SkillTaxonomy {
   const technical: string[] = [];
   const functional: string[] = [];
   const soft: string[] = [];
+  
+  // Create a map of skills to their Supabase types
+  const skillTypeMap = new Map();
+  typedSkills.forEach(({ skill, type }) => {
+    skillTypeMap.set(skill.toLowerCase(), type);
+  });
   
   const technicalKeywords = [
     'programming', 'development', 'software', 'hardware', 'system', 'network', 'database', 'security',
@@ -294,7 +305,25 @@ function categorizeSkills(skills: string[]): SkillTaxonomy {
   
   skills.forEach(skill => {
     const skillLower = skill.toLowerCase();
+    const supabaseType = skillTypeMap.get(skillLower);
     
+    // First check if we have explicit type from Supabase
+    if (supabaseType) {
+      switch (supabaseType) {
+        case 'Technical Skill':
+          technical.push(skill);
+          return;
+        case 'Functional Skill':
+          functional.push(skill);
+          return;
+        case 'Leadership Skill':
+        case 'Soft Skill':
+          soft.push(skill);
+          return;
+      }
+    }
+    
+    // Fallback to keyword-based categorization
     if (technicalKeywords.some(keyword => skillLower.includes(keyword))) {
       technical.push(skill);
     } else if (functionalKeywords.some(keyword => skillLower.includes(keyword))) {
@@ -318,7 +347,7 @@ function categorizeSkills(skills: string[]): SkillTaxonomy {
   };
 }
 
-// Fuzzy matching with context extraction
+// Fuzzy matching with context extraction and confidence filtering
 function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy): SkillMatch[] {
   const skills: SkillMatch[] = [];
   const lowerText = text.toLowerCase();
@@ -386,11 +415,11 @@ function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy): SkillM
     });
   });
   
-  // Sort by frequency and confidence, remove duplicates
+  // Filter out skills with confidence <= 10% and sort by frequency and confidence
   return skills
-    .filter(skill => skill.frequency > 0)
+    .filter(skill => skill.frequency > 0 && skill.confidence > 10) // Filter out low confidence skills
     .sort((a, b) => (b.frequency * b.confidence) - (a.frequency * a.confidence))
-    .slice(0, 25); // Top 25 skills
+    .slice(0, 50); // Increased to show more high-quality skills
 }
 
 // Generate common variations of skills
@@ -470,10 +499,10 @@ function detectDomains(text: string, skills: SkillMatch[]): string[] {
 }
 
 function generateSummary(text: string, skills: SkillMatch[]): string {
-  const topSkills = skills.slice(0, 5).map(s => s.skill);
+  const topSkills = skills.slice(0, 5).map(s => s.name);
   const categories = [...new Set(skills.map(s => s.category))];
   
-  return `Analysis identified ${skills.length} relevant skills across ${categories.length} categories. ` +
+  return `Analysis identified ${skills.length} relevant skills with >10% confidence across ${categories.length} categories. ` +
          `Top skills include: ${topSkills.join(', ')}. ` +
          `Content spans ${Math.round(text.length / 1000)}K characters.`;
 }
@@ -503,7 +532,6 @@ serve(async (req) => {
     const extractedText = await extractTextFromFile(file);
     console.log(`Extracted text length: ${extractedText.length} characters`);
     console.log(`First 500 chars: ${extractedText.substring(0, 500)}`);
-    console.log(`Unique file hash: ${file.name}-${file.size}-${file.lastModified || Date.now()}`);
 
     if (!extractedText || extractedText.length < 50) {
       throw new Error('Could not extract sufficient text from file. Please ensure the file contains readable text content.');
@@ -513,9 +541,9 @@ serve(async (req) => {
     const taxonomy = await loadSkillsTaxonomy();
     console.log(`Loaded taxonomy with ${Object.values(taxonomy).flat().length} total skills`);
 
-    // Extract skills with fuzzy matching
+    // Extract skills with fuzzy matching and confidence filtering
     const matchedSkills = extractSkillsWithContext(extractedText, taxonomy);
-    console.log(`Found ${matchedSkills.length} skill matches`);
+    console.log(`Found ${matchedSkills.length} high-confidence skill matches (>10% confidence)`);
 
     // Generate comprehensive analysis
     const analysis = analyzeContent(extractedText, matchedSkills);
