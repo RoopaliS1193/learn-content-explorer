@@ -27,6 +27,57 @@ interface SkillData {
   type: string;
 }
 
+// Simple fuzzy matching implementation for Deno environment
+function calculateLevenshteinDistance(str1: string, str2: string): number {
+  const matrix: number[][] = [];
+  
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
+        );
+      }
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
+}
+
+function calculateSimilarity(str1: string, str2: string): number {
+  const distance = calculateLevenshteinDistance(str1.toLowerCase(), str2.toLowerCase());
+  const maxLength = Math.max(str1.length, str2.length);
+  return maxLength === 0 ? 1 : 1 - (distance / maxLength);
+}
+
+// Common misspelling patterns and corrections
+const commonMisspellings: { [key: string]: string[] } = {
+  'javascript': ['java script', 'java-script', 'js'],
+  'python': ['phyton', 'pyhton'],
+  'management': ['managment', 'mangement'],
+  'communication': ['comunication', 'comunnication'],
+  'leadership': ['leadershp', 'leadershipi'],
+  'analysis': ['analisis', 'analisys'],
+  'development': ['developement', 'devlopment'],
+  'kubernetes': ['kubernets', 'kubernates', 'k8s'],
+  'postgresql': ['postgres', 'postgre sql'],
+  'machine learning': ['ml', 'machinelearning', 'machine-learning'],
+  'artificial intelligence': ['ai', 'artificialintelligence'],
+  'cloud computing': ['cloudcomputing', 'cloud-computing']
+};
+
 // Enhanced text extraction with streaming support
 async function extractTextFromFile(file: File): Promise<string> {
   try {
@@ -43,14 +94,11 @@ async function extractTextFromFile(file: File): Promise<string> {
     // Handle PDF files
     if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
       try {
-        // For large PDFs, read in chunks
         const arrayBuffer = await file.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
         
-        // Simple PDF text extraction - look for text streams
         const pdfText = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false }).decode(uint8Array);
         
-        // Extract readable text using regex patterns
         const textPattern = /(?:BT\s+.*?ET)|(?:\([^)]*\))|(?:<[^>]*>)/g;
         const matches = pdfText.match(textPattern) || [];
         
@@ -61,7 +109,6 @@ async function extractTextFromFile(file: File): Promise<string> {
           .replace(/\s+/g, ' ')
           .trim();
           
-        // If no structured text found, try simple extraction
         if (extractedText.length < 100) {
           extractedText = pdfText
             .replace(/[^\w\s\-.,;:!?]/g, ' ')
@@ -69,10 +116,9 @@ async function extractTextFromFile(file: File): Promise<string> {
             .trim();
         }
         
-        return extractedText.substring(0, 100000); // Limit to 100KB of text
+        return extractedText.substring(0, 100000);
       } catch (error) {
         console.error('PDF parsing error:', error);
-        // Fallback to binary text extraction
         const arrayBuffer = await file.arrayBuffer();
         const text = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false }).decode(arrayBuffer);
         return text.replace(/[^\w\s\-.,;:!?]/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 50000);
@@ -85,7 +131,6 @@ async function extractTextFromFile(file: File): Promise<string> {
         const arrayBuffer = await file.arrayBuffer();
         const text = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false }).decode(arrayBuffer);
         
-        // Extract text from XML content
         const xmlPattern = /<w:t[^>]*>([^<]*)<\/w:t>/g;
         const matches = text.match(xmlPattern) || [];
         
@@ -98,14 +143,12 @@ async function extractTextFromFile(file: File): Promise<string> {
         return extractedText.substring(0, 100000);
       } catch (error) {
         console.error('DOCX parsing error:', error);
-        // Fallback extraction
         const arrayBuffer = await file.arrayBuffer();
         const text = new TextDecoder('utf-8', { ignoreBOM: true, fatal: false }).decode(arrayBuffer);
         return text.replace(/[^\w\s\-.,;:!?]/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 50000);
       }
     }
     
-    // Default fallback for any file
     const text = await file.text();
     return text.substring(0, 100000);
     
@@ -146,17 +189,14 @@ async function loadSkillsTaxonomy(): Promise<{ taxonomy: SkillTaxonomy; skillsDa
         const skillType = row['Skill Type'] || 'Technical Skill';
         
         if (canonicalTerm) {
-          // Store skill data for matching
           skillsData.push({
             canonical: canonicalTerm,
             mappedTerms: Array.isArray(mappedTerms) ? mappedTerms : [],
             type: skillType
           });
           
-          // Add canonical term to all skills
           allSkills.push(canonicalTerm);
           
-          // Add mapped terms to all skills
           if (Array.isArray(mappedTerms)) {
             mappedTerms.forEach((term: string) => {
               if (term && term.trim()) {
@@ -167,8 +207,7 @@ async function loadSkillsTaxonomy(): Promise<{ taxonomy: SkillTaxonomy; skillsDa
         }
       });
       
-      console.log(`Total skills loaded (including mapped terms): ${allSkills.length}`);
-      console.log(`Skill data records: ${skillsData.length}`);
+      console.log(`Total skills loaded from Supabase: ${allSkills.length} (including ${skillsData.length} canonical terms and their mapped terms)`);
     } else {
       console.log('No skills found in Supabase, using fallback taxonomy');
     }
@@ -207,7 +246,6 @@ async function loadSkillsTaxonomy(): Promise<{ taxonomy: SkillTaxonomy; skillsDa
     
   } catch (error) {
     console.error('Error loading skills taxonomy:', error);
-    // Return base taxonomy as fallback
     return {
       taxonomy: {
         technical_skills: ["JavaScript", "Python", "Java", "React", "SQL", "AWS", "Docker", "Git"],
@@ -301,14 +339,14 @@ function categorizeSkills(skills: string[], skillsData: SkillData[] = []): Skill
   };
 }
 
-// Enhanced skill extraction with full word matching, mapped terms, and case-insensitive matching
+// Enhanced fuzzy skill extraction with complete word matching and misspelling handling
 function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy, skillsData: SkillData[]): SkillMatch[] {
   const skills: SkillMatch[] = [];
   const lowerText = text.toLowerCase();
   const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
   
-  // Create a comprehensive skill map with all variations
-  const skillMap = new Map<string, { canonical: string; category: string; type: string }>();
+  // Create a comprehensive skill map with all variations and fuzzy matching
+  const skillMap = new Map<string, { canonical: string; category: string; type: string; variations: string[] }>();
   
   // Process each skill category
   const categories = [
@@ -317,7 +355,7 @@ function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy, skillsD
     { name: 'soft', skills: taxonomy.soft_skills }
   ];
   
-  // Build skill map with canonical and mapped terms
+  // Build skill map with canonical, mapped terms, and misspelling variations
   categories.forEach(category => {
     category.skills.forEach(skill => {
       const skillLower = skill.toLowerCase();
@@ -328,91 +366,125 @@ function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy, skillsD
         sd.mappedTerms.some(mt => mt.toLowerCase() === skillLower)
       );
       
-      // Add canonical term
-      skillMap.set(skillLower, {
-        canonical: skill,
-        category: category.name,
-        type: skillData?.type || 'Unknown'
-      });
+      // Collect all variations for this skill
+      const variations = [skill];
       
       // Add mapped terms if available
       if (skillData) {
         skillData.mappedTerms.forEach(mappedTerm => {
           if (mappedTerm && mappedTerm.trim()) {
-            skillMap.set(mappedTerm.toLowerCase().trim(), {
-              canonical: skillData.canonical, // Use canonical as the primary name
-              category: category.name,
-              type: skillData.type
-            });
+            variations.push(mappedTerm.trim());
           }
         });
       }
+      
+      // Add common misspellings
+      const misspellings = commonMisspellings[skillLower] || [];
+      variations.push(...misspellings);
+      
+      skillMap.set(skillLower, {
+        canonical: skillData?.canonical || skill,
+        category: category.name,
+        type: skillData?.type || 'Unknown',
+        variations: variations
+      });
     });
   });
   
-  console.log(`Built skill map with ${skillMap.size} total skill variations`);
+  console.log(`Built skill map with ${skillMap.size} total skills and their variations`);
   
-  // Extract skills with full word matching
+  // Extract skills with fuzzy matching and complete word boundaries
   const foundSkills = new Map<string, SkillMatch>();
   
-  skillMap.forEach((skillInfo, skillVariation) => {
+  skillMap.forEach((skillInfo, skillKey) => {
     const contexts: string[] = [];
-    let frequency = 0;
-    let confidence = 0;
+    let totalFrequency = 0;
+    let totalConfidence = 0;
     
-    // Create regex for full word matching (case-insensitive)
-    // Escape special regex characters and ensure word boundaries
-    const escapedSkill = skillVariation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`\\b${escapedSkill}\\b`, 'gi');
-    
-    // Count full word matches
-    const matches = lowerText.match(regex);
-    if (matches) {
-      frequency = matches.length;
-      confidence = Math.min(frequency * 25, 100); // 25% confidence per match, max 100%
+    // Check each variation of the skill
+    skillInfo.variations.forEach(variation => {
+      const variationLower = variation.toLowerCase();
       
-      // Extract contexts where skill appears
-      sentences.forEach(sentence => {
-        const sentenceLower = sentence.toLowerCase();
-        if (regex.test(sentenceLower)) {
-          contexts.push(sentence.trim().substring(0, 200));
-          regex.lastIndex = 0; // Reset regex for next test
+      // Create regex for complete word matching (case-insensitive)
+      const escapedVariation = variationLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedVariation}\\b`, 'gi');
+      
+      // Count exact matches
+      const exactMatches = lowerText.match(regex);
+      if (exactMatches) {
+        totalFrequency += exactMatches.length;
+        totalConfidence += exactMatches.length * 30; // Higher confidence for exact matches
+        
+        // Extract contexts for exact matches
+        sentences.forEach(sentence => {
+          const sentenceLower = sentence.toLowerCase();
+          if (regex.test(sentenceLower)) {
+            contexts.push(sentence.trim().substring(0, 200));
+            regex.lastIndex = 0;
+          }
+        });
+      }
+      
+      // Fuzzy matching for potential misspellings
+      const words = lowerText.split(/\s+/);
+      words.forEach(word => {
+        // Clean word of punctuation
+        const cleanWord = word.replace(/[^\w]/g, '');
+        if (cleanWord.length >= 3 && cleanWord !== variationLower) {
+          const similarity = calculateSimilarity(cleanWord, variationLower);
+          
+          // If similarity is high (80%+), consider it a fuzzy match
+          if (similarity >= 0.8 && similarity < 1.0) {
+            totalFrequency += 1;
+            totalConfidence += similarity * 20; // Lower confidence for fuzzy matches
+            
+            // Find context for fuzzy match
+            const wordIndex = text.toLowerCase().indexOf(cleanWord);
+            if (wordIndex !== -1) {
+              const contextStart = Math.max(0, wordIndex - 50);
+              const contextEnd = Math.min(text.length, wordIndex + 100);
+              contexts.push(text.substring(contextStart, contextEnd).trim());
+            }
+          }
         }
       });
+    });
+    
+    if (totalFrequency > 0) {
+      // Calculate final confidence (cap at 100%)
+      const finalConfidence = Math.min(totalConfidence, 100);
       
-      // Remove duplicate contexts
-      const uniqueContexts = [...new Set(contexts)].slice(0, 3);
-      
-      // Use canonical name as the key to avoid duplicates
-      const canonicalName = skillInfo.canonical;
-      
-      if (foundSkills.has(canonicalName)) {
-        // Merge with existing entry
-        const existing = foundSkills.get(canonicalName)!;
-        existing.frequency += frequency;
-        existing.confidence = Math.min(existing.confidence + confidence, 100);
-        existing.contexts = [...new Set([...existing.contexts, ...uniqueContexts])].slice(0, 3);
-      } else {
-        // Create new entry
-        foundSkills.set(canonicalName, {
-          skill: canonicalName,
-          frequency,
-          contexts: uniqueContexts,
-          category: skillInfo.category,
-          confidence
-        });
+      // Only include skills with confidence >= 40%
+      if (finalConfidence >= 40) {
+        const canonicalName = skillInfo.canonical;
+        const uniqueContexts = [...new Set(contexts)].slice(0, 3);
+        
+        if (foundSkills.has(canonicalName)) {
+          // Merge with existing entry
+          const existing = foundSkills.get(canonicalName)!;
+          existing.frequency += totalFrequency;
+          existing.confidence = Math.min(existing.confidence + finalConfidence, 100);
+          existing.contexts = [...new Set([...existing.contexts, ...uniqueContexts])].slice(0, 3);
+        } else {
+          // Create new entry
+          foundSkills.set(canonicalName, {
+            skill: canonicalName,
+            frequency: totalFrequency,
+            contexts: uniqueContexts,
+            category: skillInfo.category,
+            confidence: finalConfidence
+          });
+        }
       }
     }
   });
   
-  // Convert to array and filter by confidence > 10%
   const result = Array.from(foundSkills.values())
-    .filter(skill => skill.confidence > 10)
     .sort((a, b) => (b.frequency * b.confidence) - (a.frequency * a.confidence))
     .slice(0, 50);
   
-  console.log(`Found ${result.length} skills with >10% confidence`);
-  console.log('Top 10 skills:', result.slice(0, 10).map(s => `${s.skill} (${s.confidence}%)`));
+  console.log(`Found ${result.length} skills with ≥40% confidence (fuzzy matching enabled)`);
+  console.log('Top 10 skills:', result.slice(0, 10).map(s => `${s.skill} (${s.confidence.toFixed(1)}%)`));
   
   return result;
 }
@@ -490,7 +562,6 @@ serve(async (req) => {
       throw new Error('No file provided');
     }
 
-    // Increased file size limit for large documents
     const maxFileSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxFileSize) {
       throw new Error(`File too large. Maximum size allowed is ${maxFileSize / 1024 / 1024}MB.`);
@@ -511,9 +582,9 @@ serve(async (req) => {
     console.log(`Loaded taxonomy with ${Object.values(taxonomy).flat().length} total skills`);
     console.log(`Loaded ${skillsData.length} skill data records from Supabase`);
 
-    // Extract skills with enhanced matching
+    // Extract skills with enhanced fuzzy matching
     const matchedSkills = extractSkillsWithContext(extractedText, taxonomy, skillsData);
-    console.log(`Found ${matchedSkills.length} high-confidence skill matches (>10% confidence)`);
+    console.log(`Found ${matchedSkills.length} high-confidence skill matches (≥40% confidence) with fuzzy matching`);
 
     // Generate comprehensive analysis
     const analysis = analyzeContent(extractedText, matchedSkills);
@@ -528,7 +599,7 @@ serve(async (req) => {
       }
     };
 
-    console.log('Analysis completed successfully');
+    console.log('Analysis completed successfully with fuzzy matching and 40% confidence threshold');
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -537,7 +608,6 @@ serve(async (req) => {
   } catch (error) {
     console.error('Analysis error:', error);
     
-    // Enhanced error handling
     const errorResponse = {
       error: error.message,
       type: error.name || 'AnalysisError',

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -68,8 +67,16 @@ export const EnhancedAnalysisResults: React.FC<EnhancedAnalysisResultsProps> = (
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 70) return 'text-green-600';
+    if (confidence >= 50) return 'text-blue-600';
     if (confidence >= 40) return 'text-yellow-600';
     return 'text-orange-600';
+  };
+
+  const getConfidenceLabel = (confidence: number) => {
+    if (confidence >= 70) return 'Very High';
+    if (confidence >= 50) return 'High';
+    if (confidence >= 40) return 'Medium';
+    return 'Low';
   };
 
   if (isLoading) {
@@ -77,8 +84,8 @@ export const EnhancedAnalysisResults: React.FC<EnhancedAnalysisResultsProps> = (
       <Card className="p-8">
         <div className="text-center mb-8">
           <Loader2 className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <h3 className="text-2xl font-semibold text-slate-800 mb-2">Advanced Analysis in Progress</h3>
-          <p className="text-slate-600">Processing your file with comprehensive skill extraction from thousands of skills in our taxonomy...</p>
+          <h3 className="text-2xl font-semibold text-slate-800 mb-2">Advanced Fuzzy Analysis in Progress</h3>
+          <p className="text-slate-600">Processing your file with intelligent fuzzy matching from 27,000+ skills taxonomy, handling misspellings and variations...</p>
         </div>
         
         <div className="space-y-6">
@@ -104,8 +111,9 @@ export const EnhancedAnalysisResults: React.FC<EnhancedAnalysisResultsProps> = (
 
   const categories = ['all', ...new Set(result.skills.map(s => s.category))];
   const filteredSkills = getFilteredSkills(result.skills);
-  const highConfidenceSkills = result.skills.filter(s => s.confidence >= 50);
-  const mediumConfidenceSkills = result.skills.filter(s => s.confidence >= 25 && s.confidence < 50);
+  const highConfidenceSkills = result.skills.filter(s => s.confidence >= 70);
+  const mediumConfidenceSkills = result.skills.filter(s => s.confidence >= 50 && s.confidence < 70);
+  const lowConfidenceSkills = result.skills.filter(s => s.confidence >= 40 && s.confidence < 50);
 
   return (
     <div className="space-y-8">
@@ -113,7 +121,7 @@ export const EnhancedAnalysisResults: React.FC<EnhancedAnalysisResultsProps> = (
       <Card className="p-6">
         <div className="flex items-center space-x-3 mb-6">
           <FileText className="h-6 w-6 text-blue-600" />
-          <h3 className="text-xl font-semibold text-slate-800">Analysis Complete</h3>
+          <h3 className="text-xl font-semibold text-slate-800">Fuzzy Analysis Complete</h3>
         </div>
         
         <div className="grid md:grid-cols-2 gap-6 mb-6">
@@ -134,16 +142,20 @@ export const EnhancedAnalysisResults: React.FC<EnhancedAnalysisResultsProps> = (
           
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600">Skills Found:</span>
+              <span className="text-slate-600">Skills Found (≥40%):</span>
               <span className="font-medium text-slate-800">{result.metadata.skillsFound}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600">High Confidence (≥50%):</span>
+              <span className="text-slate-600">Very High Confidence (≥70%):</span>
               <span className="font-medium text-green-600">{highConfidenceSkills.length}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-600">Medium Confidence (25-49%):</span>
-              <span className="font-medium text-yellow-600">{mediumConfidenceSkills.length}</span>
+              <span className="text-slate-600">High Confidence (50-69%):</span>
+              <span className="font-medium text-blue-600">{mediumConfidenceSkills.length}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-600">Medium Confidence (40-49%):</span>
+              <span className="font-medium text-yellow-600">{lowConfidenceSkills.length}</span>
             </div>
           </div>
         </div>
@@ -152,12 +164,13 @@ export const EnhancedAnalysisResults: React.FC<EnhancedAnalysisResultsProps> = (
           <p className="text-sm text-blue-800">{result.summary}</p>
         </div>
 
-        <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+        <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
           <div className="flex items-start space-x-2">
-            <Info className="h-4 w-4 text-amber-600 mt-0.5" />
-            <p className="text-xs text-amber-800">
-              <strong>Quality Filter Applied:</strong> Only showing skills with confidence levels above 10%. 
-              This ensures higher accuracy by filtering out weak matches and focusing on clearly identified skills.
+            <Info className="h-4 w-4 text-emerald-600 mt-0.5" />
+            <p className="text-xs text-emerald-800">
+              <strong>Fuzzy Matching Enabled:</strong> Using intelligent fuzzy matching with 27,000+ skills taxonomy. 
+              Handles common misspellings, variations, and synonyms while maintaining complete word matching. 
+              Only showing skills with confidence levels ≥40% for enhanced accuracy.
             </p>
           </div>
         </div>
@@ -218,12 +231,15 @@ export const EnhancedAnalysisResults: React.FC<EnhancedAnalysisResultsProps> = (
                     <Badge className={`text-xs ${getCategoryColor(skill.category)}`}>
                       {skill.category}
                     </Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {getConfidenceLabel(skill.confidence)}
+                    </Badge>
                   </div>
                   <div className="flex items-center space-x-3">
                     <div className="text-right text-xs">
                       <div className="text-slate-600">Matches: {skill.frequency}</div>
                       <div className={`font-medium ${getConfidenceColor(skill.confidence)}`}>
-                        {skill.confidence}% confidence
+                        {skill.confidence.toFixed(1)}% confidence
                       </div>
                     </div>
                     {skill.contexts.length > 0 && (
@@ -243,8 +259,8 @@ export const EnhancedAnalysisResults: React.FC<EnhancedAnalysisResultsProps> = (
                 
                 <div className="mb-3">
                   <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
-                    <span>Confidence Level</span>
-                    <span className={getConfidenceColor(skill.confidence)}>{skill.confidence}%</span>
+                    <span>Confidence Level ({getConfidenceLabel(skill.confidence)})</span>
+                    <span className={getConfidenceColor(skill.confidence)}>{skill.confidence.toFixed(1)}%</span>
                   </div>
                   <Progress value={skill.confidence} className="h-2" />
                 </div>
