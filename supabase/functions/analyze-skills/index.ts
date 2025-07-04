@@ -393,8 +393,12 @@ function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy, skillsD
   
   console.log(`Built skill map with ${skillMap.size} total skills and their variations`);
   
-  // Extract skills with fuzzy matching and complete word boundaries
+  // Extract skills with optimized matching and complete word boundaries
   const foundSkills = new Map<string, SkillMatch>();
+  const words = lowerText.split(/\s+/);
+  
+  // Pre-process words for faster matching
+  const cleanWords = words.map(word => word.replace(/[^\w]/g, '')).filter(word => word.length >= 2);
   
   skillMap.forEach((skillInfo, skillKey) => {
     const contexts: string[] = [];
@@ -404,6 +408,9 @@ function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy, skillsD
     // Check each variation of the skill
     skillInfo.variations.forEach(variation => {
       const variationLower = variation.toLowerCase();
+      
+      // Skip very short variations to avoid false positives
+      if (variationLower.length < 2) return;
       
       // Create regex for complete word matching (case-insensitive)
       const escapedVariation = variationLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -415,39 +422,43 @@ function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy, skillsD
         totalFrequency += exactMatches.length;
         totalConfidence += exactMatches.length * 30; // Higher confidence for exact matches
         
-        // Extract contexts for exact matches
-        sentences.forEach(sentence => {
+        // Extract contexts for exact matches (limit to first 2 to save memory)
+        let contextCount = 0;
+        for (const sentence of sentences) {
+          if (contextCount >= 2) break;
           const sentenceLower = sentence.toLowerCase();
           if (regex.test(sentenceLower)) {
             contexts.push(sentence.trim().substring(0, 200));
+            contextCount++;
             regex.lastIndex = 0;
+          }
+        }
+      }
+      
+      // Optimized fuzzy matching for potential misspellings (only for longer skills)
+      if (variationLower.length >= 4) {
+        cleanWords.forEach(cleanWord => {
+          if (cleanWord.length >= 3 && cleanWord !== variationLower && Math.abs(cleanWord.length - variationLower.length) <= 3) {
+            const similarity = calculateSimilarity(cleanWord, variationLower);
+            
+            // If similarity is high (85%+), consider it a fuzzy match
+            if (similarity >= 0.85 && similarity < 1.0) {
+              totalFrequency += 1;
+              totalConfidence += similarity * 15; // Lower confidence for fuzzy matches
+              
+              // Find context for fuzzy match (simplified)
+              if (contexts.length < 2) {
+                const wordIndex = lowerText.indexOf(cleanWord);
+                if (wordIndex !== -1) {
+                  const contextStart = Math.max(0, wordIndex - 30);
+                  const contextEnd = Math.min(text.length, wordIndex + 70);
+                  contexts.push(text.substring(contextStart, contextEnd).trim());
+                }
+              }
+            }
           }
         });
       }
-      
-      // Fuzzy matching for potential misspellings
-      const words = lowerText.split(/\s+/);
-      words.forEach(word => {
-        // Clean word of punctuation
-        const cleanWord = word.replace(/[^\w]/g, '');
-        if (cleanWord.length >= 3 && cleanWord !== variationLower) {
-          const similarity = calculateSimilarity(cleanWord, variationLower);
-          
-          // If similarity is high (80%+), consider it a fuzzy match
-          if (similarity >= 0.8 && similarity < 1.0) {
-            totalFrequency += 1;
-            totalConfidence += similarity * 20; // Lower confidence for fuzzy matches
-            
-            // Find context for fuzzy match
-            const wordIndex = text.toLowerCase().indexOf(cleanWord);
-            if (wordIndex !== -1) {
-              const contextStart = Math.max(0, wordIndex - 50);
-              const contextEnd = Math.min(text.length, wordIndex + 100);
-              contexts.push(text.substring(contextStart, contextEnd).trim());
-            }
-          }
-        }
-      });
     });
     
     if (totalFrequency > 0) {
@@ -457,14 +468,14 @@ function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy, skillsD
       // Only include skills with confidence >= 40%
       if (finalConfidence >= 40) {
         const canonicalName = skillInfo.canonical;
-        const uniqueContexts = [...new Set(contexts)].slice(0, 3);
+        const uniqueContexts = [...new Set(contexts)].slice(0, 2); // Limit contexts
         
         if (foundSkills.has(canonicalName)) {
           // Merge with existing entry
           const existing = foundSkills.get(canonicalName)!;
           existing.frequency += totalFrequency;
           existing.confidence = Math.min(existing.confidence + finalConfidence, 100);
-          existing.contexts = [...new Set([...existing.contexts, ...uniqueContexts])].slice(0, 3);
+          existing.contexts = [...new Set([...existing.contexts, ...uniqueContexts])].slice(0, 2);
         } else {
           // Create new entry
           foundSkills.set(canonicalName, {
@@ -481,10 +492,10 @@ function extractSkillsWithContext(text: string, taxonomy: SkillTaxonomy, skillsD
   
   const result = Array.from(foundSkills.values())
     .sort((a, b) => (b.frequency * b.confidence) - (a.frequency * a.confidence))
-    .slice(0, 50);
+    .slice(0, 30); // Reduced from 50 to improve performance
   
-  console.log(`Found ${result.length} skills with ≥40% confidence (fuzzy matching enabled)`);
-  console.log('Top 10 skills:', result.slice(0, 10).map(s => `${s.skill} (${s.confidence.toFixed(1)}%)`));
+  console.log(`Found ${result.length} skills with ≥40% confidence (optimized fuzzy matching)`);
+  console.log('Top 5 skills:', result.slice(0, 5).map(s => `${s.skill} (${s.confidence.toFixed(1)}%)`));
   
   return result;
 }
